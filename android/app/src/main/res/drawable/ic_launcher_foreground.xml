@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône LigdiBe : portefeuille doré avec pièce (« Ligdi » = l'argent). Zone sûre 66dp centrée. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Corps du portefeuille -->
+    <path
+        android:fillColor="#F2A900"
+        android:pathData="M34,40 h40 a6,6 0 0 1 6,6 v22 a6,6 0 0 1 -6,6 h-40 a6,6 0 0 1 -6,-6 v-22 a6,6 0 0 1 6,-6 z" />
+    <!-- Rabat -->
+    <path
+        android:fillColor="#C98C00"
+        android:pathData="M34,40 l30,-8 a4,4 0 0 1 5,3 l1,5 z" />
+    <!-- Fermoir -->
+    <path
+        android:fillColor="#0A5A45"
+        android:pathData="M62,51 h18 v12 h-18 a6,6 0 0 1 0,-12 z" />
+    <!-- Pièce -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,57 m-3,0 a3,3 0 1 0 6,0 a3,3 0 1 0 -6,0" />
+</vector>

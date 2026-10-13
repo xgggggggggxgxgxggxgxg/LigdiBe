@@ -59,7 +59,7 @@ export const notifyExpenseDetected = async (tx: Transaction): Promise<void> => {
     data: { transactionId: tx.id },
     android: {
       channelId: CHANNELS.TRANSACTIONS,
-      smallIcon: 'ic_launcher',
+      smallIcon: 'ic_notification',
       pressAction: { id: 'default' },
       actions: QUICK_EXPENSE_CATEGORIES.map(c => ({ title: c, pressAction: { id: `${ACTION_CATEGORY}${c}` } })),
     },
@@ -71,7 +71,7 @@ export const notifyCashConversion = async (tx: Transaction): Promise<void> => {
     id: `tx-${tx.id}`,
     title: `👛 ${formatFCFA(tx.amount)} ajoutés à ta Poche`,
     body: 'Retrait converti en espèces : ce n’est pas une dépense. Les frais d’agent sont classés en « Frais & Taxes ».',
-    android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+    android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
   });
 };
 
@@ -86,7 +86,7 @@ export const notifyIncome = async (tx: Transaction, debt?: Debt): Promise<void> 
     data: { transactionId: tx.id, amount: String(tx.amount) },
     android: {
       channelId: CHANNELS.TRANSACTIONS,
-      smallIcon: 'ic_launcher',
+      smallIcon: 'ic_notification',
       pressAction: { id: 'default' },
       actions: debt ? [{ title: '✅ Oui, rembourser', pressAction: { id: `${ACTION_DEBT}${debt.id}` } }] : undefined,
     },
@@ -100,7 +100,7 @@ export const notifyAlert = async (id: string, title: string, body: string): Prom
     body,
     android: {
       channelId: CHANNELS.ALERTS,
-      smallIcon: 'ic_launcher',
+      smallIcon: 'ic_notification',
       pressAction: { id: 'default' },
       style: { type: AndroidStyle.BIGTEXT, text: body },
     },
@@ -136,7 +136,7 @@ export const scheduleDailyReminders = async (
       body: `Il reste ${formatFCFA(Math.max(0, mb.availableForRestOfMonth))} pour ${
         mb.remainingDays
       } jours${weekend}. Bonne journée !`,
-      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
     },
     {
       type: TriggerType.TIMESTAMP,
@@ -155,7 +155,7 @@ export const scheduleDailyReminders = async (
       id: EVENING_ID,
       title: `🌙 Bilan du jour : ${formatFCFA(eb.todaySpent)} dépensés`,
       body: `${verdict} Pense à noter tes dépenses en espèces.`,
-      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
     },
     {
       type: TriggerType.TIMESTAMP,
@@ -188,7 +188,7 @@ export const scheduleMonthlyReminders = async (
       body: `${formatFCFA(cmp.current)} dépensés. ${cmp.message}${
         fees > 0 ? ` Frais MoMo : ${formatFCFA(fees)}.` : ''
       }`,
-      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
     },
     { type: TriggerType.TIMESTAMP, timestamp: firstOfNext.getTime(), alarmManager: { allowWhileIdle: true } },
   );
@@ -202,7 +202,7 @@ export const scheduleMonthlyReminders = async (
       id: FORECAST_REMINDER_ID,
       title: `🗓️ Prépare ton prévisionnel de ${label(nextMonthKey(monthKey(reminder)))}`,
       body: 'Reporte tes lignes récurrentes en un tap et vois si le mois prochain tient la route.',
-      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
     },
     { type: TriggerType.TIMESTAMP, timestamp: reminder.getTime(), alarmManager: { allowWhileIdle: true } },
   );
@@ -225,7 +225,7 @@ export const notifyAfterRecording = async (
       id: `tx-${main.id}`,
       title: `🏦 ${formatFCFA(main.amount)} déposés sur ton compte`,
       body: 'Espèces retirées de ta Poche : ce n’est pas un revenu, ton budget reste juste.',
-      android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+      android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
     });
   } else if (main.type === 'INCOME') {
     await notifyIncome(main, findDebtForTransaction(await repos.debts.getAll(), main));
