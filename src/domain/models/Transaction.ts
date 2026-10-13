@@ -39,6 +39,8 @@ export interface Transaction {
   balanceAfter?: number;
   reference?: string;
   rawSms?: string;
+  /** Empreinte du SMS brut pour la déduplication (SMS multiples, import historique). */
+  smsFingerprint?: string;
   /** Lien vers la transaction mère (frais, crédit cash d'un retrait). */
   parentId?: string;
   source: TransactionSource;
