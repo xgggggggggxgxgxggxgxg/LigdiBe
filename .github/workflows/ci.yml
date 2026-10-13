@@ -18,7 +18,7 @@ jobs:
       - run: npx tsc --noEmit
       - run: npx eslint . --ext .ts,.tsx,.js
       # node:sqlite (tests des dépôts SQL) nécessite Node ≥ 22.5
-      - run: npx jest --coverage
+      - run: npx jest --coverage --maxWorkers=2
 
   android:
     runs-on: ubuntu-latest

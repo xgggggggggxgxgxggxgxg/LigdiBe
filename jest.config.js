@@ -3,6 +3,8 @@ module.exports = {
   setupFiles: ['<rootDir>/jest.setup.js'],
   setupFilesAfterEnv: ['@testing-library/react-native/extend-expect'],
   testMatch: ['<rootDir>/__tests__/**/*.test.ts?(x)'],
+  // Le premier rendu d'un écran compile React Native Paper à froid : ~10 s sur un runner CI 2 cœurs avec couverture.
+  testTimeout: 30000,
   transformIgnorePatterns: [
     'node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation|react-native-paper|react-native-vector-icons|react-native-safe-area-context|react-native-screens|@notifee|@op-engineering|zustand)/)',
   ],
