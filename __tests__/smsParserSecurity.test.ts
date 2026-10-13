@@ -205,3 +205,50 @@ describe('parseTransactionSms - règles génériques', () => {
     expect(parseTransactionSms(MOOV_PAYMENT)?.total).toBe(6000);
   });
 });
+
+describe('Dépôt chez un agent (espèces → MoMo)', () => {
+  test('Moov : dépôt agent', () => {
+    const r = parseTransactionSms(
+      "Depot reussi auprès de l'Agent AWA KIOSQUE\nCode d'agent: 2001\nMontant: 5 000,00 FCFA\nFrais: 0,00 FCFA\nDate: 12/10/2026 09:00\nTID: DEP123\nSolde: 21 316,00 FCFA",
+    );
+    expect(r).toMatchObject({
+      provider: 'MOOV',
+      type: 'AGENT_DEPOSIT',
+      amount: 5000,
+      total: 5000,
+      counterpartyName: 'AWA KIOSQUE',
+      agentCode: '2001',
+      balanceAfter: 21316,
+    });
+  });
+
+  test('Orange : dépôt reçu de l’agent', () => {
+    const r = parseTransactionSms(
+      "Vous avez recu un depot de 10000.00 FCFA de l'agent 7714597 ANSV BORO. Votre solde est de : 90207.94 FCFA. Trans ID: CI261012.0900.1",
+    );
+    expect(r).toMatchObject({
+      provider: 'ORANGE',
+      type: 'AGENT_DEPOSIT',
+      amount: 10000,
+      agentCode: '7714597',
+      balanceAfter: 90207.94,
+      occurredAt: '2026-10-12T09:00:00',
+    });
+  });
+
+  test('Wave : dépôt chez un point', () => {
+    const r = parseTransactionSms(
+      'Vous avez déposé 5.000F chez Kiosque Fatim le 12/10/2026 10:00. Solde Wave: 5.500F Avec UBA DEP9',
+    );
+    expect(r).toMatchObject({
+      provider: 'UBA_WAVE',
+      type: 'AGENT_DEPOSIT',
+      amount: 5000,
+      counterpartyName: 'Kiosque Fatim',
+      balanceAfter: 5500,
+    });
+    const short = parseTransactionSms('Vous avez déposé 1.000F chez Kiosque Fatim.');
+    expect(short).toMatchObject({ type: 'AGENT_DEPOSIT', amount: 1000 });
+    expect(short?.balanceAfter).toBeUndefined();
+  });
+});

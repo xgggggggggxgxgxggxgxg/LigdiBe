@@ -1,6 +1,7 @@
 import { CATEGORIES } from '../src/core/categories';
 import { parseTransactionSms } from '../src/data/parser/SmsParserEngine';
 import { CASH_ACCOUNT_ID } from '../src/domain/models/Account';
+import { isIncome, isSpending } from '../src/domain/models/Transaction';
 import { autoCategorize } from '../src/domain/usecases/CategorizeTransaction';
 import {
   buildLedgerEntries,
@@ -161,5 +162,33 @@ describe('ProcessIncomingSmsUseCase', () => {
     expect(runInTransaction).toBeDefined();
     const r = await new ProcessIncomingSmsUseCase(repos).execute({ body: ORANGE_PAYMENT });
     expect(r.status).toBe('RECORDED');
+  });
+});
+
+describe('Dépôt agent : Poche → MoMo (ni revenu ni dépense)', () => {
+  test('Poche débitée, MoMo crédité, aucune dépense/revenu', () => {
+    const parsed = parseTransactionSms(
+      'Vous avez déposé 5.000F chez Kiosque Fatim le 12/10/2026 10:00. Avec UBA DEP9',
+    )!;
+    const { transactions, accounts } = buildLedgerEntries(
+      parsed,
+      [
+        { id: CASH_ACCOUNT_ID, name: 'Poche', provider: 'CASH', currentBalance: 8000, type: 'CASH' },
+        { id: 'wave-uba', name: 'Wave', provider: 'UBA_WAVE', currentBalance: 500, type: 'MOMO' },
+      ],
+      NOW,
+      { idGen },
+    );
+    expect(transactions.map(t => t.type)).toEqual(['AGENT_DEPOSIT', 'CASH_OUT']);
+    expect(transactions[0].category).toBe(CATEGORIES.MOMO_DEPOSIT);
+    expect(accounts.find(a => a.id === 'wave-uba')?.currentBalance).toBe(5500);
+    expect(accounts.find(a => a.id === CASH_ACCOUNT_ID)?.currentBalance).toBe(3000);
+    expect(transactions.some(t => isSpending(t) || isIncome(t))).toBe(false);
+  });
+
+  test('crée la Poche si absente (solde négatif signalant des espèces non saisies)', () => {
+    const parsed = parseTransactionSms('Vous avez déposé 1.000F chez K.')!;
+    const { accounts } = buildLedgerEntries(parsed, [], NOW, { idGen });
+    expect(accounts.find(a => a.id === CASH_ACCOUNT_ID)?.currentBalance).toBe(-1000);
   });
 });

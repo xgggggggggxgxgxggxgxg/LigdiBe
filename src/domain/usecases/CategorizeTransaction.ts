@@ -48,6 +48,8 @@ export const autoCategorize = (
       return CATEGORIES.AIRTIME;
     case 'CASH_WITHDRAWAL':
       return CATEGORIES.CASH_WITHDRAWAL;
+    case 'AGENT_DEPOSIT':
+      return CATEGORIES.MOMO_DEPOSIT;
     case 'INCOME':
       return CATEGORIES.INCOME;
   }

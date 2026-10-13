@@ -120,6 +120,21 @@ const RULES: ReadonlyArray<ParserRule> = [
     }),
   },
   {
+    id: 'MOOV_AGENT_DEPOSIT',
+    provider: 'MOOV',
+    pattern: /D[ée]p[ôo]t r[ée]ussi aupr[èéeê]s de l'Agent ([^\n]+)\n/i,
+    build: (m, s) => ({
+      type: 'AGENT_DEPOSIT',
+      amount: parseAmountOrZero(field(s, new RegExp(`Montant\\s*:\\s*${AMT}${CUR}`, 'i'))),
+      fee: moovFee(s),
+      counterpartyName: cleanName(m[1]),
+      agentCode: field(s, /Code d'agent\s*:\s*(\d+)/i),
+      balanceAfter: moovBalance(s),
+      reference: moovRef(s),
+      occurredAt: moovDate(s),
+    }),
+  },
+  {
     id: 'MOOV_TRANSFER_RECEIVED',
     provider: 'MOOV',
     pattern: new RegExp(`Vous avez re[çc]u ${AMT}${CUR} de ([^\\n]+)\\n\\s*Num[ée]ro\\s*:\\s*\\+?(\\d+)`, 'i'),
@@ -205,6 +220,26 @@ const RULES: ReadonlyArray<ParserRule> = [
     },
   },
 
+  {
+    id: 'ORANGE_AGENT_DEPOSIT',
+    provider: 'ORANGE',
+    pattern: new RegExp(
+      `(?:re[çc]u un d[ée]p[ôo]t de|D[ée]p[ôo]t de) ${AMT}${CUR}[^\\n]*?(?:de|par) l['\\s]?\\s*agent\\s+([^,.\\n]+)`,
+      'i',
+    ),
+    build: (m, s) => {
+      const agent = cleanName(m[2]);
+      return withOrangeDate({
+        type: 'AGENT_DEPOSIT',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyName: agent,
+        agentCode: field(agent, /^(\d+)\s/),
+        balanceAfter: orangeBalance(s),
+        reference: orangeRef(s),
+      });
+    },
+  },
+
   // ===================== WAVE / UBA =====================
   {
     id: 'WAVE_RECEIVED',
@@ -237,6 +272,19 @@ const RULES: ReadonlyArray<ParserRule> = [
         occurredAt: waveDate(s),
       };
     },
+  },
+  {
+    id: 'WAVE_AGENT_DEPOSIT',
+    provider: 'UBA_WAVE',
+    pattern: new RegExp(`Vous avez d[ée]pos[ée] ${AMT}${CUR} chez (.+?)(?: le \\d{2}/|\\.|$)`, 'im'),
+    build: (m, s) => ({
+      type: 'AGENT_DEPOSIT',
+      amount: parseAmountOrZero(m[1]),
+      counterpartyName: cleanName(m[2]),
+      balanceAfter: waveBalance(s),
+      reference: waveRef(s),
+      occurredAt: waveDate(s),
+    }),
   },
   {
     id: 'WAVE_PAYMENT',
@@ -340,7 +388,7 @@ export const parseTransactionSms = (rawSms: string, options: ParseOptions = {}):
     }
     const fee = draft.fee ?? 0;
     const tax = draft.tax ?? 0;
-    const isDebit = draft.type !== 'INCOME';
+    const isDebit = draft.type !== 'INCOME' && draft.type !== 'AGENT_DEPOSIT';
     const total = draft.total ?? round(isDebit ? draft.amount + fee + tax : draft.amount);
     return stripUndefined<ParsedSms>({
       ...draft,

@@ -12,11 +12,17 @@ const ICONS: Record<Transaction['type'], string> = {
   AIRTIME_RECHARGE: 'cellphone-wireless',
   FEE: 'percent-outline',
   CASH_DEPOSIT: 'wallet-plus-outline',
+  AGENT_DEPOSIT: 'bank-transfer-in',
+  CASH_OUT: 'wallet-outline',
 };
 
 /** Sens affiché : + revenu / poche alimentée, − dépense, ⇄ retrait (neutre). */
 export const transactionSign = (t: Transaction): '+' | '-' | '⇄' =>
-  t.type === 'INCOME' || t.type === 'CASH_DEPOSIT' ? '+' : t.type === 'CASH_WITHDRAWAL' ? '⇄' : '-';
+  t.type === 'INCOME' || t.type === 'CASH_DEPOSIT'
+    ? '+'
+    : t.type === 'CASH_WITHDRAWAL' || t.type === 'AGENT_DEPOSIT' || t.type === 'CASH_OUT'
+    ? '⇄'
+    : '-';
 
 interface Props {
   transaction: Transaction;

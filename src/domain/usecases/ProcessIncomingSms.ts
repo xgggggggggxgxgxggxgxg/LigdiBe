@@ -110,7 +110,8 @@ export const buildLedgerEntries = (
       account.updatedAt = occurredAt;
     }
   } else {
-    const delta = parsed.type === 'INCOME' ? parsed.amount - charges : -(parsed.amount + charges);
+    const credit = parsed.type === 'INCOME' || parsed.type === 'AGENT_DEPOSIT';
+    const delta = credit ? parsed.amount - charges : -(parsed.amount + charges);
     account.currentBalance = roundMoney(account.currentBalance + delta);
     account.updatedAt = isNewer ? occurredAt : account.updatedAt;
   }
@@ -132,6 +133,30 @@ export const buildLedgerEntries = (
       counterpartyName: main.counterpartyName,
       category: CATEGORIES.CASH_IN,
       note: `Retrait ${PROVIDER_LABELS[parsed.provider]} converti en espèces`,
+      parentId: main.id,
+      source: 'SYSTEM',
+      occurredAt,
+      createdAt: nowIso,
+    });
+  }
+
+  if (parsed.type === 'AGENT_DEPOSIT') {
+    // Dépôt chez un agent : les espèces de la Poche passent sur le compte MoMo (ni revenu, ni dépense).
+    const cash = { ...(accounts.find(a => a.id === CASH_ACCOUNT_ID) ?? findOrCreateAccount(accounts, 'CASH')) };
+    cash.currentBalance = roundMoney(cash.currentBalance - parsed.amount);
+    cash.updatedAt = nowIso;
+    touched.push(cash);
+    transactions.push({
+      id: idGen('tx'),
+      accountId: CASH_ACCOUNT_ID,
+      provider: 'CASH',
+      type: 'CASH_OUT',
+      amount: parsed.amount,
+      fee: 0,
+      tax: 0,
+      counterpartyName: main.counterpartyName,
+      category: CATEGORIES.MOMO_DEPOSIT,
+      note: `Espèces déposées sur ${PROVIDER_LABELS[parsed.provider]}`,
       parentId: main.id,
       source: 'SYSTEM',
       occurredAt,

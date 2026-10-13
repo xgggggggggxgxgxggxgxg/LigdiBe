@@ -14,6 +14,7 @@ export const CATEGORIES = {
   TRANSFER: 'Transfert envoyé',
   CASH_WITHDRAWAL: 'Retrait Cash',
   CASH_IN: 'Alimentation Poche',
+  MOMO_DEPOSIT: 'Dépôt sur MoMo',
   INCOME: 'Revenu',
   SALARY: 'Salaire',
   OTHER: 'Autre',

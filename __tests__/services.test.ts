@@ -35,6 +35,10 @@ describe('Notifications', () => {
     const repos = createInMemoryRepositories();
     await notifyAfterRecording(repos, [tx({ type: 'CASH_WITHDRAWAL', amount: 1000 })], NOW);
     expect((notifee.displayNotification as jest.Mock).mock.calls[0][0].title).toContain('Poche');
+    jest.clearAllMocks();
+    await notifyAfterRecording(repos, [tx({ type: 'AGENT_DEPOSIT', amount: 5000 })], NOW);
+    expect((notifee.displayNotification as jest.Mock).mock.calls[0][0].title).toContain('déposés');
+    jest.clearAllMocks();
 
     await repos.debts.save({
       id: 'd',
@@ -51,7 +55,7 @@ describe('Notifications', () => {
       [tx({ type: 'INCOME', amount: 5000, counterpartyPhone: '76900142', counterpartyName: 'ROMARIC' })],
       NOW,
     );
-    const income = (notifee.displayNotification as jest.Mock).mock.calls[1][0];
+    const income = (notifee.displayNotification as jest.Mock).mock.calls[0][0];
     expect(income.body).toContain('remboursement de ROMARIC');
     expect(income.android.actions[0].pressAction.id).toBe('debt-repay:d');
     await notifyAfterRecording(repos, [], NOW);

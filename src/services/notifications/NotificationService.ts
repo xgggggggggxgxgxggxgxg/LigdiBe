@@ -220,6 +220,13 @@ export const notifyAfterRecording = async (
   }
   if (main.type === 'CASH_WITHDRAWAL') {
     await notifyCashConversion(main);
+  } else if (main.type === 'AGENT_DEPOSIT') {
+    await notifee.displayNotification({
+      id: `tx-${main.id}`,
+      title: `🏦 ${formatFCFA(main.amount)} déposés sur ton compte`,
+      body: 'Espèces retirées de ta Poche : ce n’est pas un revenu, ton budget reste juste.',
+      android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+    });
   } else if (main.type === 'INCOME') {
     await notifyIncome(main, findDebtForTransaction(await repos.debts.getAll(), main));
   } else if (main.type === 'EXPENSE') {

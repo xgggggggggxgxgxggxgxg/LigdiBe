@@ -22,7 +22,7 @@ const FILTERS: ReadonlyArray<{ id: QuickFilter; label: string; icon: string }> =
   { id: 'ALL', label: 'Tout', icon: 'format-list-bulleted' },
   { id: 'EXPENSE', label: 'Dépenses', icon: 'cart-outline' },
   { id: 'INCOME', label: 'Entrées', icon: 'arrow-bottom-left' },
-  { id: 'CASH', label: 'Retraits/Poche', icon: 'cash-fast' },
+  { id: 'CASH', label: 'Retraits/Dépôts', icon: 'cash-fast' },
   { id: 'AIRTIME', label: 'Crédit', icon: 'cellphone-wireless' },
   { id: 'FEE', label: 'Frais', icon: 'percent-outline' },
 ];
@@ -35,7 +35,7 @@ export const filterTransactions = (txs: ReadonlyArray<Transaction>, f: QuickFilt
       case 'INCOME':
         return t.type === 'INCOME';
       case 'CASH':
-        return t.type === 'CASH_WITHDRAWAL' || t.type === 'CASH_DEPOSIT';
+        return ['CASH_WITHDRAWAL', 'CASH_DEPOSIT', 'AGENT_DEPOSIT', 'CASH_OUT'].includes(t.type);
       case 'AIRTIME':
         return t.type === 'AIRTIME_RECHARGE';
       case 'FEE':

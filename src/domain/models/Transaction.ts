@@ -1,14 +1,15 @@
 export type Provider = 'MOOV' | 'ORANGE' | 'UBA_WAVE' | 'WAVE' | 'TELECEL' | 'ECOBANK' | 'BANK' | 'CASH';
 
 /** Types produits par le parseur SMS. */
-export type ParsedTransactionType = 'EXPENSE' | 'INCOME' | 'CASH_WITHDRAWAL' | 'AIRTIME_RECHARGE';
+export type ParsedTransactionType = 'EXPENSE' | 'INCOME' | 'CASH_WITHDRAWAL' | 'AGENT_DEPOSIT' | 'AIRTIME_RECHARGE';
 
 /**
  * Types du grand livre local. `FEE` isole les frais/taxes opérateur,
  * `CASH_DEPOSIT` est le crédit automatique du portefeuille espèces
- * consécutif à un retrait kiosque (jamais compté comme dépense).
+ * consécutif à un retrait kiosque (jamais compté comme dépense), `CASH_OUT` le
+ * débit de la Poche quand les espèces sont déposées chez un agent (`AGENT_DEPOSIT`).
  */
-export type TransactionType = ParsedTransactionType | 'FEE' | 'CASH_DEPOSIT';
+export type TransactionType = ParsedTransactionType | 'FEE' | 'CASH_DEPOSIT' | 'CASH_OUT';
 
 export type TransactionSource = 'SMS' | 'MANUAL' | 'SYSTEM';
 
