@@ -44,3 +44,11 @@ Node ≥ 22.5 requis pour les tests des dépôts SQL (`node:sqlite`).
 ## Publication Google Play
 
 Les permissions `RECEIVE_SMS` / `READ_SMS` exigent la déclaration « Permissions SMS et journal d'appels » (exception *gestion financière basée sur les SMS*). Rien ne quitte l'appareil : l'app n'utilise pas Internet en production.
+
+## Version de publication (Google Play)
+
+1. Générer une clé : `keytool -genkeypair -v -keystore upload.keystore -alias ligdibe -keyalg RSA -keysize 2048 -validity 10000`
+2. Créer les secrets GitHub : `LIGDIBE_UPLOAD_KEYSTORE_BASE64` (`base64 -w0 upload.keystore`), `LIGDIBE_UPLOAD_STORE_PASSWORD`, `LIGDIBE_UPLOAD_KEY_ALIAS`, `LIGDIBE_UPLOAD_KEY_PASSWORD`.
+3. Pousser un tag `v1.0.0` : la CI produit l'AAB signé (`ligdibe-release-aab`).
+
+En local, les mêmes variables peuvent être placées dans `~/.gradle/gradle.properties`. Sans clé, le build release est signé avec la clé debug (non publiable).

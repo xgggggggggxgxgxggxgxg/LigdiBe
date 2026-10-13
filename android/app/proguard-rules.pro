@@ -8,3 +8,8 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# LigdiBe : modules natifs appelés par réflexion depuis React Native
+-keep class com.ligdibe.sms.** { *; }
+-keep class com.op.sqlite.** { *; }
+-keep class io.invertase.notifee.** { *; }
