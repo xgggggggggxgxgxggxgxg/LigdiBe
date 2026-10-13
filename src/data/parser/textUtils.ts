@@ -60,17 +60,14 @@ export const parseAmount = (value: string | undefined): number | undefined => {
 };
 
 /** Montant obligatoire : 0 si absent (utile pour frais/taxes vides). */
-export const parseAmountOrZero = (value: string | undefined): number =>
-  parseAmount(value) ?? 0;
+export const parseAmountOrZero = (value: string | undefined): number => parseAmount(value) ?? 0;
 
 /** Convertit 'dd/mm/yyyy hh:mm[:ss]' en ISO local (sans fuseau, heure locale du téléphone). */
 export const parseFrenchDate = (value: string | undefined): string | undefined => {
   if (!value) {
     return undefined;
   }
-  const m = value.match(
-    /(\d{2})\/(\d{2})\/(\d{4})(?:\s*(?:à|a)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?/,
-  );
+  const m = value.match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s*(?:à|a)?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
   if (!m) {
     return undefined;
   }

@@ -62,7 +62,13 @@ export const AddTransactionModal = ({ visible, onDismiss }: Props) => {
             style={styles.block}
           />
           <AmountInput label="Montant" value={amount} onChangeText={setAmount} testID="manual-amount" />
-          <TextInput mode="outlined" label="Libellé (ex: Maquis, Taxi, Marché)" value={label} onChangeText={setLabel} style={styles.block} />
+          <TextInput
+            mode="outlined"
+            label="Libellé (ex: Maquis, Taxi, Marché)"
+            value={label}
+            onChangeText={setLabel}
+            style={styles.block}
+          />
           <Text variant="labelLarge">Compte</Text>
           <CategoryPicker
             value={accounts.find(a => a.id === accountId)?.name ?? ''}
@@ -75,7 +81,13 @@ export const AddTransactionModal = ({ visible, onDismiss }: Props) => {
               <CategoryPicker value={category} onChange={setCategory} />
             </>
           )}
-          <Button mode="contained" onPress={save} loading={saving} disabled={saving || parseInputAmount(amount) <= 0} style={styles.block} testID="manual-save">
+          <Button
+            mode="contained"
+            onPress={save}
+            loading={saving}
+            disabled={saving || parseInputAmount(amount) <= 0}
+            style={styles.block}
+            testID="manual-save">
             Enregistrer
           </Button>
         </ScrollView>

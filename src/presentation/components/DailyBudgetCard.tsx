@@ -41,7 +41,11 @@ export const DailyBudgetCard = ({ budget, streak = 0 }: Props) => {
           {exceeded ? 'de dépassement — ' : 'restants — '}
           {formatFCFA(budget.todaySpent)} dépensés sur {formatFCFA(budget.todayBudget)}
         </Text>
-        <ProgressBar progress={Math.min(1, Number.isFinite(budget.progress) ? budget.progress : 1)} color={color} style={styles.bar} />
+        <ProgressBar
+          progress={Math.min(1, Number.isFinite(budget.progress) ? budget.progress : 1)}
+          color={color}
+          style={styles.bar}
+        />
         {exceeded && (
           <Text variant="bodySmall" style={{ color: palette.red }} testID="budget-alert">
             ⚠️ Enveloppe dépassée : les jours suivants sont ré-équilibrés automatiquement.

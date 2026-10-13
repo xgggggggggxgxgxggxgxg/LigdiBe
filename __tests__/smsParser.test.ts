@@ -1,7 +1,6 @@
 import { parseTransactionSms } from '../src/data/parser/SmsParserEngine';
 
 describe('SmsParserEngine - Real West African Transaction SMS', () => {
-
   test('1. Moov Money - Paiement Marchand InTouch Burkina', () => {
     const sms = `Paiement reussi auprés du marchand INTOUCH BURKINA\nMontant: 6 000,00 FCFA\nFrais: 0,00 FCFA\nTotal: 6 000,00 FCFA\nDate: 09/10/2026 20:03\nTID: DJ91LNF5HF\nSolde: 9 891,00 FCFA`;
     const result = parseTransactionSms(sms);
@@ -12,7 +11,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       fee: 0,
       merchantOrRecipient: 'INTOUCH BURKINA',
       balanceAfter: 9891,
-      reference: 'DJ91LNF5HF'
+      reference: 'DJ91LNF5HF',
     });
   });
 
@@ -25,7 +24,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       amount: 1000,
       fee: 10,
       counterpartyName: 'IBRAHIM ILBOUDO',
-      balanceAfter: 16316
+      balanceAfter: 16316,
     });
   });
 
@@ -38,11 +37,11 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       amount: 7070,
       counterpartyName: 'MME SANGARE CHANTAL MADINA',
       counterpartyPhone: '22670201448',
-      balanceAfter: 17426
+      balanceAfter: 17426,
     });
   });
 
-  test('4. Moov Money - Recharge Crédit d\'appel', () => {
+  test("4. Moov Money - Recharge Crédit d'appel", () => {
     const sms = `Ref : DIP4KSD2J2, Vous avez rechargé le 22670524434 via Moov Money avec 200,00 FCFA de crédit. GAGNEZ 200% de bonus sur toutes vos recharges.Votre solde MOOV Money est de 11 256,00 FCFA.`;
     const result = parseTransactionSms(sms);
     expect(result).toMatchObject({
@@ -50,7 +49,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       type: 'AIRTIME_RECHARGE',
       amount: 200,
       counterpartyPhone: '22670524434',
-      balanceAfter: 11256
+      balanceAfter: 11256,
     });
   });
 
@@ -64,7 +63,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       fee: 4.3478,
       tax: 0.6522,
       counterpartyName: 'WENDSONGUEDE DAVID SAWADOGO',
-      balanceAfter: 192284.67
+      balanceAfter: 192284.67,
     });
   });
 
@@ -77,7 +76,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       amount: 110560.48,
       counterpartyName: 'ROMARIC',
       counterpartyPhone: '76900142',
-      balanceAfter: 189986.92
+      balanceAfter: 189986.92,
     });
   });
 
@@ -89,7 +88,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       type: 'CASH_WITHDRAWAL',
       amount: 200000,
       counterpartyName: '7714597 ANSV BORO DORO CELESATECH',
-      balanceAfter: 80207.94
+      balanceAfter: 80207.94,
     });
   });
 
@@ -100,7 +99,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       provider: 'UBA_WAVE',
       type: 'INCOME',
       amount: 3000,
-      counterpartyName: 'OKPEOLOU Eric'
+      counterpartyName: 'OKPEOLOU Eric',
     });
 
     const smsRetrait = `Vous avez retiré 2.500F chez Sadja Design le 20/07/2026  18:19. Solde Wave: 500F Avec UBA ATXVXMWMMIVVXJH64FX`;
@@ -110,7 +109,7 @@ describe('SmsParserEngine - Real West African Transaction SMS', () => {
       type: 'EXPENSE',
       amount: 2500,
       counterpartyName: 'Sadja Design',
-      balanceAfter: 500
+      balanceAfter: 500,
     });
   });
 });

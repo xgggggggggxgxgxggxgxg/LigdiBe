@@ -8,7 +8,7 @@ jest.mock('@op-engineering/op-sqlite', () => ({
 }));
 
 jest.mock('react-native-keychain', () => ({
-  ACCESSIBLE: {AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY'},
+  ACCESSIBLE: { AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY' },
   getGenericPassword: jest.fn(async () => false),
   setGenericPassword: jest.fn(async () => true),
 }));

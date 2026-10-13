@@ -25,7 +25,9 @@ const syncOnForeground = async () => {
   await store.hydrate();
   const s = useFinanceStore.getState();
   if (s.onboarded) {
-    await scheduleDailyReminders(s.budgetConfig, s.transactions, new Date(), s.paidFixedExpenseIds).catch(() => undefined);
+    await scheduleDailyReminders(s.budgetConfig, s.transactions, new Date(), s.paidFixedExpenseIds).catch(
+      () => undefined,
+    );
   }
 };
 

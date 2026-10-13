@@ -4,9 +4,9 @@ const pad = (n: number): string => String(n).padStart(2, '0');
 
 /** ISO local sans fuseau : 'YYYY-MM-DDTHH:mm:ss'. */
 export const toLocalIso = (d: Date): string =>
-  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(
-    d.getMinutes(),
-  )}:${pad(d.getSeconds())}`;
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(
+    d.getSeconds(),
+  )}`;
 
 /** Parse un ISO local (ou avec fuseau) en Date. */
 export const fromIso = (iso: string): Date => new Date(iso);
@@ -41,8 +41,18 @@ export const isWeekendWindow = (d: Date): boolean => {
 
 export const FRENCH_WEEKDAYS = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 export const FRENCH_MONTHS = [
-  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
-  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre',
+  'janvier',
+  'février',
+  'mars',
+  'avril',
+  'mai',
+  'juin',
+  'juillet',
+  'août',
+  'septembre',
+  'octobre',
+  'novembre',
+  'décembre',
 ];
 
 export const formatMonthLabel = (month: string): string => {

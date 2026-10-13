@@ -18,7 +18,9 @@ const ensureLegacyWritePermission = async (): Promise<void> => {
 
 const writeWithFallback = async (fileName: string, content: string): Promise<string> => {
   await ensureLegacyWritePermission();
-  const candidates = [RNFS.DownloadDirectoryPath, RNFS.ExternalDirectoryPath, RNFS.DocumentDirectoryPath].filter(Boolean);
+  const candidates = [RNFS.DownloadDirectoryPath, RNFS.ExternalDirectoryPath, RNFS.DocumentDirectoryPath].filter(
+    Boolean,
+  );
   let lastError: unknown;
   for (const dir of candidates) {
     const path = `${dir}/${fileName}`;
@@ -35,7 +37,10 @@ const writeWithFallback = async (fileName: string, content: string): Promise<str
 /** Exporte toutes les transactions en CSV horodaté (ex: LigdiBe_transactions_20261013-213000.csv). */
 export const exportTransactionsCsv = async (repos: Repositories, now = new Date()): Promise<ExportResult> => {
   const transactions = await repos.transactions.listAll();
-  const path = await writeWithFallback(`LigdiBe_transactions_${fileTimestamp(now)}.csv`, transactionsToCsv(transactions));
+  const path = await writeWithFallback(
+    `LigdiBe_transactions_${fileTimestamp(now)}.csv`,
+    transactionsToCsv(transactions),
+  );
   return { path, count: transactions.length };
 };
 

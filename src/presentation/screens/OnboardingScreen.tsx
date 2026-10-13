@@ -23,7 +23,10 @@ export const OnboardingScreen = () => {
   const start = async () => {
     setBusy(true);
     try {
-      await completeOnboarding(name.trim(), { ...config, monthlyBudget: parseInputAmount(budget) || config.monthlyBudget });
+      await completeOnboarding(name.trim(), {
+        ...config,
+        monthlyBudget: parseInputAmount(budget) || config.monthlyBudget,
+      });
       await ensureNotificationChannels().catch(() => undefined);
       if (await requestSmsPermissions().catch(() => false)) {
         await importSmsBacklog(await getRepositories(), Date.now() - 60 * DAY_MS);
@@ -50,11 +53,18 @@ export const OnboardingScreen = () => {
         <Text style={styles.point}>🔒 Tout reste chiffré sur ton téléphone</Text>
         <TextInput mode="outlined" label="Ton prénom" value={name} onChangeText={setName} style={styles.input} />
         <AmountInput label="Ton budget du mois" value={budget} onChangeText={setBudget} testID="onboarding-budget" />
-        <Button mode="contained" onPress={start} loading={busy} disabled={busy || !name.trim()} style={styles.input} testID="onboarding-start">
+        <Button
+          mode="contained"
+          onPress={start}
+          loading={busy}
+          disabled={busy || !name.trim()}
+          style={styles.input}
+          testID="onboarding-start">
           Commencer
         </Button>
         <Text variant="bodySmall" style={styles.muted}>
-          À l'étape suivante, Android te demandera l'accès aux SMS : seuls les messages des opérateurs financiers sont lus, jamais les codes secrets.
+          À l'étape suivante, Android te demandera l'accès aux SMS : seuls les messages des opérateurs financiers sont
+          lus, jamais les codes secrets.
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -26,7 +26,11 @@ describe('buildLedgerEntries - règle du retrait kiosque', () => {
     );
     expect(transactions.map(t => t.type)).toEqual(['CASH_WITHDRAWAL', 'FEE', 'CASH_DEPOSIT']);
     const [main, fee, cashIn] = transactions;
-    expect(main).toMatchObject({ accountId: 'moov-money', category: CATEGORIES.CASH_WITHDRAWAL, occurredAt: '2026-09-30T18:17:58' });
+    expect(main).toMatchObject({
+      accountId: 'moov-money',
+      category: CATEGORIES.CASH_WITHDRAWAL,
+      occurredAt: '2026-09-30T18:17:58',
+    });
     expect(fee).toMatchObject({ amount: 10, category: CATEGORIES.FEES, parentId: main.id });
     expect(cashIn).toMatchObject({ accountId: CASH_ACCOUNT_ID, amount: 1000, parentId: main.id });
     expect(accounts.find(a => a.id === 'moov-money')?.currentBalance).toBe(16316);
@@ -46,8 +50,15 @@ describe('buildLedgerEntries - règle du retrait kiosque', () => {
   });
 
   test('sans solde dans le SMS, le solde est calculé par delta', () => {
-    const debit = parseTransactionSms('Vous avez transfere 2000 FCFA au 76543210. Frais: 25 FCFA', { sender: 'Telecel' })!;
-    const r1 = buildLedgerEntries(debit, [{ id: 'telecel-account', name: 'T', provider: 'TELECEL', currentBalance: 10000, type: 'MOMO' }], NOW, { idGen });
+    const debit = parseTransactionSms('Vous avez transfere 2000 FCFA au 76543210. Frais: 25 FCFA', {
+      sender: 'Telecel',
+    })!;
+    const r1 = buildLedgerEntries(
+      debit,
+      [{ id: 'telecel-account', name: 'T', provider: 'TELECEL', currentBalance: 10000, type: 'MOMO' }],
+      NOW,
+      { idGen },
+    );
     expect(r1.accounts[0]).toMatchObject({ id: 'telecel-account', currentBalance: 7975 });
     const credit = { ...debit, type: 'INCOME' as const, fee: 0, balanceAfter: undefined };
     const r2 = buildLedgerEntries(credit, [], NOW, { idGen });
@@ -58,7 +69,16 @@ describe('buildLedgerEntries - règle du retrait kiosque', () => {
     const parsed = parseTransactionSms(MOOV_WITHDRAWAL)!;
     const r = buildLedgerEntries(
       parsed,
-      [{ id: 'moov-money', name: 'Moov', provider: 'MOOV', currentBalance: 50000, type: 'MOMO', updatedAt: '2026-10-12T00:00:00' }],
+      [
+        {
+          id: 'moov-money',
+          name: 'Moov',
+          provider: 'MOOV',
+          currentBalance: 50000,
+          type: 'MOMO',
+          updatedAt: '2026-10-12T00:00:00',
+        },
+      ],
       NOW,
       { idGen },
     );
@@ -66,7 +86,16 @@ describe('buildLedgerEntries - règle du retrait kiosque', () => {
     const noBalance = { ...parsed, balanceAfter: undefined };
     const r2 = buildLedgerEntries(
       noBalance,
-      [{ id: 'moov-money', name: 'Moov', provider: 'MOOV', currentBalance: 50000, type: 'MOMO', updatedAt: '2026-10-12T00:00:00' }],
+      [
+        {
+          id: 'moov-money',
+          name: 'Moov',
+          provider: 'MOOV',
+          currentBalance: 50000,
+          type: 'MOMO',
+          updatedAt: '2026-10-12T00:00:00',
+        },
+      ],
       NOW,
       { idGen },
     );
@@ -85,8 +114,12 @@ describe('autoCategorize', () => {
     expect(autoCategorize({ type: 'INCOME' })).toBe(CATEGORIES.INCOME);
     expect(autoCategorize({ type: 'EXPENSE', merchantOrRecipient: 'STATION TOTAL OUAGA 2000' })).toBe(CATEGORIES.FUEL);
     expect(autoCategorize({ type: 'EXPENSE', merchantOrRecipient: 'INTOUCH BURKINA' })).toBe(CATEGORIES.BILLS);
-    expect(autoCategorize({ type: 'EXPENSE', counterpartyName: 'ALI', counterpartyPhone: '70112233' })).toBe(CATEGORIES.TRANSFER);
-    expect(autoCategorize({ type: 'EXPENSE', counterpartyPhone: '70112233' }, { '70112233': CATEGORIES.FAMILY })).toBe(CATEGORIES.FAMILY);
+    expect(autoCategorize({ type: 'EXPENSE', counterpartyName: 'ALI', counterpartyPhone: '70112233' })).toBe(
+      CATEGORIES.TRANSFER,
+    );
+    expect(autoCategorize({ type: 'EXPENSE', counterpartyPhone: '70112233' }, { '70112233': CATEGORIES.FAMILY })).toBe(
+      CATEGORIES.FAMILY,
+    );
     expect(autoCategorize({ type: 'EXPENSE' })).toBe(CATEGORIES.OTHER);
   });
 });
@@ -124,7 +157,8 @@ describe('ProcessIncomingSmsUseCase', () => {
   });
 
   test('fonctionne sans runInTransaction', async () => {
-    const { runInTransaction: _ignored, ...repos } = createInMemoryRepositories();
+    const { runInTransaction, ...repos } = createInMemoryRepositories();
+    expect(runInTransaction).toBeDefined();
     const r = await new ProcessIncomingSmsUseCase(repos).execute({ body: ORANGE_PAYMENT });
     expect(r.status).toBe('RECORDED');
   });

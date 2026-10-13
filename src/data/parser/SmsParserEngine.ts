@@ -61,9 +61,7 @@ const field = (sms: string, re: RegExp): string | undefined => sms.match(re)?.[1
 const moovFee = (s: string) => parseAmountOrZero(field(s, new RegExp(`Frais\\s*:\\s*${OPT_AMT}${CUR}`, 'i')));
 const moovTotal = (s: string) => parseAmount(field(s, new RegExp(`Total\\s*:\\s*${AMT}${CUR}`, 'i')));
 const moovBalance = (s: string) =>
-  parseAmount(
-    field(s, new RegExp(`(?:Solde|Votre solde MOOV Money est de|Nouveau solde)\\s*:?\\s*${AMT}${CUR}`, 'i')),
-  );
+  parseAmount(field(s, new RegExp(`(?:Solde|Votre solde MOOV Money est de|Nouveau solde)\\s*:?\\s*${AMT}${CUR}`, 'i')));
 const moovRef = (s: string) => field(s, /(?:TID|Txn ID|Trans ID|Ref)\s*:\s*([A-Z0-9]+)/i);
 const moovDate = (s: string) => parseFrenchDate(field(s, /Date\s*:\s*([\d/]+\s+[\d:]+)/i));
 
@@ -75,8 +73,7 @@ const orangeBalance = (s: string) =>
       new RegExp(`(?:Votre solde est de|Le solde de votre compte est de|Nouveau solde)\\s*:?\\s*${AMT}${CUR}`, 'i'),
     ),
   );
-const orangeRef = (s: string) =>
-  field(s, /Trans(?:action)?\s*id\s*:\s*([A-Z0-9]+(?:\.[A-Z0-9]+)*)/i);
+const orangeRef = (s: string) => field(s, /Trans(?:action)?\s*id\s*:\s*([A-Z0-9]+(?:\.[A-Z0-9]+)*)/i);
 
 // ---------- Champs communs Wave / UBA ----------
 const waveBalance = (s: string) => parseAmount(field(s, new RegExp(`Solde(?: Wave)?\\s*:\\s*${AMT}${CUR}`, 'i')));

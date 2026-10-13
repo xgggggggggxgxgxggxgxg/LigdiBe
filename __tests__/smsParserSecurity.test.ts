@@ -128,9 +128,7 @@ describe('parseTransactionSms - garde-fous', () => {
   test('rejette vide, inconnu et montant nul', () => {
     expect(parseTransactionSms('   ')).toBeNull();
     expect(parseTransactionSms('Bonne fête de Tabaski à tous nos clients !')).toBeNull();
-    expect(
-      parseTransactionSms('Vous avez reçu 0F De TEST (+22670000000) 24/06/2026 à 10:38 Avec UBA x1'),
-    ).toBeNull();
+    expect(parseTransactionSms('Vous avez reçu 0F De TEST (+22670000000) 24/06/2026 à 10:38 Avec UBA x1')).toBeNull();
   });
 
   test('Orange : frais de retrait renseignés', () => {

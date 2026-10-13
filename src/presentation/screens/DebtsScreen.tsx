@@ -1,6 +1,17 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, FAB, IconButton, Modal, Portal, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import {
+  Button,
+  Card,
+  Chip,
+  FAB,
+  IconButton,
+  Modal,
+  Portal,
+  SegmentedButtons,
+  Text,
+  TextInput,
+} from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
 import { dayKey } from '../../core/dates';
@@ -44,10 +55,16 @@ const DebtCard = ({ debt }: { debt: Debt }) => {
     <Card style={[styles.card, debt.isSettled && styles.settled]} testID={`debt-${debt.id}`}>
       <Card.Title
         title={debt.contactName}
-        subtitle={`${debt.isSettled ? 'Soldé ✅' : `Reste ${formatFCFA(debtRemaining(debt))}`}${debt.dueDate ? ` · échéance ${debt.dueDate.slice(0, 10)}` : ''}`}
+        subtitle={`${debt.isSettled ? 'Soldé ✅' : `Reste ${formatFCFA(debtRemaining(debt))}`}${
+          debt.dueDate ? ` · échéance ${debt.dueDate.slice(0, 10)}` : ''
+        }`}
         right={() => (
           <View style={styles.row}>
-            {overdue && <Chip compact textStyle={{ color: palette.red }}>En retard</Chip>}
+            {overdue && (
+              <Chip compact textStyle={{ color: palette.red }}>
+                En retard
+              </Chip>
+            )}
             <IconButton icon="delete-outline" onPress={() => deleteDebt(debt.id)} />
           </View>
         )}
@@ -73,7 +90,9 @@ const DebtCard = ({ debt }: { debt: Debt }) => {
       )}
       {!debt.isSettled && debt.phone && (
         <Card.Actions>
-          <Button icon="whatsapp" onPress={() => openUrl(buildWhatsAppUrl(debt.phone!, message), buildSmsUrl(debt.phone!, message))}>
+          <Button
+            icon="whatsapp"
+            onPress={() => openUrl(buildWhatsAppUrl(debt.phone!, message), buildSmsUrl(debt.phone!, message))}>
             WhatsApp
           </Button>
           <Button icon="message-text-outline" onPress={() => openUrl(buildSmsUrl(debt.phone!, message))}>
@@ -94,18 +113,24 @@ const TontineCard = ({ tontine }: { tontine: Tontine }) => {
     <Card style={styles.card}>
       <Card.Title
         title={tontine.name}
-        subtitle={`${formatFCFA(tontine.contributionAmount)} / ${tontine.frequency === 'WEEKLY' ? 'semaine' : 'mois'} · ${tontine.membersCount} membres`}
+        subtitle={`${formatFCFA(tontine.contributionAmount)} / ${
+          tontine.frequency === 'WEEKLY' ? 'semaine' : 'mois'
+        } · ${tontine.membersCount} membres`}
         right={() => <IconButton icon="delete-outline" onPress={() => deleteTontine(tontine.id)} />}
       />
       <Card.Content>
         <Text>
           🎯 Cagnotte : <Text style={styles.bold}>{formatFCFA(s.potAmount)}</Text>
-          {s.hasReceivedPot ? ' (déjà ramassée)' : ` — ton tour le ${dayKey(s.myPickupDate)} (${s.roundsUntilMyTurn} tour(s))`}
+          {s.hasReceivedPot
+            ? ' (déjà ramassée)'
+            : ` — ton tour le ${dayKey(s.myPickupDate)} (${s.roundsUntilMyTurn} tour(s))`}
         </Text>
         <Text style={s.lateCount > 0 ? { color: palette.red } : undefined}>
           Cotisations : {s.paidCount}/{s.dueCount} {s.lateCount > 0 ? `— ${s.lateCount} en retard` : '✅'}
         </Text>
-        {s.nextContributionDate && <Text variant="bodySmall">Prochaine échéance : {dayKey(s.nextContributionDate)}</Text>}
+        {s.nextContributionDate && (
+          <Text variant="bodySmall">Prochaine échéance : {dayKey(s.nextContributionDate)}</Text>
+        )}
       </Card.Content>
       <Card.Actions>
         <Button icon="cash-check" onPress={() => payTontine(tontine.id)}>
@@ -116,7 +141,15 @@ const TontineCard = ({ tontine }: { tontine: Tontine }) => {
   );
 };
 
-const AddDebtModal = ({ visible, direction, onDismiss }: { visible: boolean; direction: DebtDirection; onDismiss: () => void }) => {
+const AddDebtModal = ({
+  visible,
+  direction,
+  onDismiss,
+}: {
+  visible: boolean;
+  direction: DebtDirection;
+  onDismiss: () => void;
+}) => {
   const saveDebt = useFinanceStore(s => s.saveDebt);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -132,10 +165,30 @@ const AddDebtModal = ({ visible, direction, onDismiss }: { visible: boolean; dir
             {direction === 'OWED_TO_ME' ? 'Quelqu’un me doit' : 'Je dois'}
           </Text>
           <TextInput mode="outlined" label="Nom" value={name} onChangeText={setName} style={styles.input} />
-          <TextInput mode="outlined" label="Téléphone (WhatsApp)" value={phone} onChangeText={setPhone} keyboardType="phone-pad" style={styles.input} />
+          <TextInput
+            mode="outlined"
+            label="Téléphone (WhatsApp)"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            style={styles.input}
+          />
           <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
-          <TextInput mode="outlined" label="Échéance (AAAA-MM-JJ)" value={due} onChangeText={setDue} error={!validDue} style={styles.input} />
-          <TextInput mode="outlined" label="Note (ex: prêt pour la scolarité)" value={note} onChangeText={setNote} style={styles.input} />
+          <TextInput
+            mode="outlined"
+            label="Échéance (AAAA-MM-JJ)"
+            value={due}
+            onChangeText={setDue}
+            error={!validDue}
+            style={styles.input}
+          />
+          <TextInput
+            mode="outlined"
+            label="Note (ex: prêt pour la scolarité)"
+            value={note}
+            onChangeText={setNote}
+            style={styles.input}
+          />
           <Button
             mode="contained"
             disabled={!name.trim() || parseInputAmount(amount) <= 0 || !validDue}
@@ -171,23 +224,60 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
   const [turn, setTurn] = useState('');
   const [weekly, setWeekly] = useState(false);
   const [start, setStart] = useState(dayKey(new Date()));
-  const ok = name.trim() && parseInputAmount(amount) > 0 && Number(members) > 1 && Number(turn) >= 1 && Number(turn) <= Number(members) && /^\d{4}-\d{2}-\d{2}$/.test(start);
+  const ok =
+    name.trim() &&
+    parseInputAmount(amount) > 0 &&
+    Number(members) > 1 &&
+    Number(turn) >= 1 &&
+    Number(turn) <= Number(members) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(start);
   return (
     <Portal>
       <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
         <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.bold}>Nouvelle tontine</Text>
-          <TextInput mode="outlined" label="Nom (ex: Tontine du marché)" value={name} onChangeText={setName} style={styles.input} />
+          <Text variant="titleLarge" style={styles.bold}>
+            Nouvelle tontine
+          </Text>
+          <TextInput
+            mode="outlined"
+            label="Nom (ex: Tontine du marché)"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+          />
           <AmountInput label="Cotisation" value={amount} onChangeText={setAmount} />
           <SegmentedButtons
             value={weekly ? 'W' : 'M'}
             onValueChange={v => setWeekly(v === 'W')}
-            buttons={[{ value: 'M', label: 'Mensuelle' }, { value: 'W', label: 'Hebdomadaire' }]}
+            buttons={[
+              { value: 'M', label: 'Mensuelle' },
+              { value: 'W', label: 'Hebdomadaire' },
+            ]}
             style={styles.input}
           />
-          <TextInput mode="outlined" label="Nombre de membres" value={members} onChangeText={setMembers} keyboardType="number-pad" style={styles.input} />
-          <TextInput mode="outlined" label="Mon rang de ramassage" value={turn} onChangeText={setTurn} keyboardType="number-pad" style={styles.input} />
-          <TextInput mode="outlined" label="Date de début (AAAA-MM-JJ)" value={start} onChangeText={setStart} style={styles.input} />
+          <TextInput
+            mode="outlined"
+            label="Nombre de membres"
+            value={members}
+            onChangeText={setMembers}
+            keyboardType="number-pad"
+            style={styles.input}
+          />
+          <TextInput
+            mode="outlined"
+            label="Mon rang de ramassage"
+            value={turn}
+            onChangeText={setTurn}
+            keyboardType="number-pad"
+            style={styles.input}
+          />
+          <TextInput
+            mode="outlined"
+            label="Date de début (AAAA-MM-JJ)"
+            value={start}
+            onChangeText={setStart}
+            style={styles.input}
+          />
           <Button
             mode="contained"
             disabled={!ok}
@@ -242,7 +332,9 @@ export const DebtsScreen = () => {
           data={tontines}
           keyExtractor={t => t.id}
           renderItem={({ item }) => <TontineCard tontine={item} />}
-          ListEmptyComponent={<Text style={styles.empty}>Suis tes tontines : cotisations, retards et date de ramassage.</Text>}
+          ListEmptyComponent={
+            <Text style={styles.empty}>Suis tes tontines : cotisations, retards et date de ramassage.</Text>
+          }
           contentContainerStyle={styles.list}
         />
       ) : (

@@ -1,3 +1,4 @@
+/* eslint-disable no-void -- raccourcis « async () => void effet » dans un faux dépôt de test */
 import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../src/domain/models/Budget';
 import type { Account } from '../../src/domain/models/Account';
 import type { Debt } from '../../src/domain/models/Debt';
@@ -39,7 +40,8 @@ export const createInMemoryRepositories = (): Repositories & {
       existsByReference: async (p, r) => store.transactions.some(t => t.provider === p && t.reference === r),
       existsBySmsFingerprint: async fp => store.transactions.some(t => t.smsFingerprint === fp),
       listBetween: async (a, b) => store.transactions.filter(t => t.occurredAt >= a && t.occurredAt < b),
-      listRecent: async n => [...store.transactions].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, n),
+      listRecent: async n =>
+        [...store.transactions].sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, n),
       listAll: async () => [...store.transactions],
       update: async (id, patch) => {
         const t = store.transactions.find(x => x.id === id);
@@ -71,7 +73,7 @@ export const createInMemoryRepositories = (): Repositories & {
     settings: {
       getBudgetConfig: async () => (store.kv.budget as BudgetConfig) ?? DEFAULT_BUDGET_CONFIG,
       saveBudgetConfig: async c => void (store.kv.budget = c),
-      getJson: async <T,>(k: string, f: T) => (k in store.kv ? (store.kv[k] as T) : f),
+      getJson: async <T>(k: string, f: T) => (k in store.kv ? (store.kv[k] as T) : f),
       setJson: async (k, v) => void (store.kv[k] = v),
     },
     runInTransaction: async fn => fn(),

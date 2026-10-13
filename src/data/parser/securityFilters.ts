@@ -32,16 +32,11 @@ const SENDER_PROVIDERS: Record<string, Provider> = {
   SANKMONEY: 'BANK',
 };
 
-export const normalizeSender = (sender: string): string =>
-  sender.toUpperCase().replace(/[^A-Z0-9]/g, '');
+export const normalizeSender = (sender: string): string => sender.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-export const providerFromSender = (sender: string): Provider | undefined =>
-  SENDER_PROVIDERS[normalizeSender(sender)];
+export const providerFromSender = (sender: string): Provider | undefined => SENDER_PROVIDERS[normalizeSender(sender)];
 
-export const isWhitelistedSender = (
-  sender: string,
-  extraSenders: ReadonlyArray<string> = [],
-): boolean => {
+export const isWhitelistedSender = (sender: string, extraSenders: ReadonlyArray<string> = []): boolean => {
   const key = normalizeSender(sender);
   if (key.length === 0) {
     return false;
@@ -66,5 +61,4 @@ const SENSITIVE_PATTERNS: ReadonlyArray<RegExp> = [
   /\bverification\s+code\b/i,
 ];
 
-export const isSensitiveSecuritySms = (body: string): boolean =>
-  SENSITIVE_PATTERNS.some(p => p.test(body));
+export const isSensitiveSecuritySms = (body: string): boolean => SENSITIVE_PATTERNS.some(p => p.test(body));

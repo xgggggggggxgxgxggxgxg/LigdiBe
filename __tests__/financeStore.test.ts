@@ -44,11 +44,24 @@ describe('useFinanceStore', () => {
     const { store, repos } = await setup();
     await store().setAccountBalance('cash-wallet', 5000);
     await store().setAccountBalance('inconnu', 1);
-    const t = await store().addManualTransaction({ accountId: 'cash-wallet', type: 'EXPENSE', amount: 1500, category: CATEGORIES.FOOD, counterpartyName: 'Maquis Chez Tanti' });
+    const t = await store().addManualTransaction({
+      accountId: 'cash-wallet',
+      type: 'EXPENSE',
+      amount: 1500,
+      category: CATEGORIES.FOOD,
+      counterpartyName: 'Maquis Chez Tanti',
+    });
     expect(store().accounts.find(a => a.id === 'cash-wallet')?.currentBalance).toBe(3500);
-    await store().addManualTransaction({ accountId: 'cash-wallet', type: 'INCOME', amount: 500, category: CATEGORIES.INCOME });
+    await store().addManualTransaction({
+      accountId: 'cash-wallet',
+      type: 'INCOME',
+      amount: 500,
+      category: CATEGORIES.INCOME,
+    });
     expect(store().accounts.find(a => a.id === 'cash-wallet')?.currentBalance).toBe(4000);
-    await expect(store().addManualTransaction({ accountId: 'x', type: 'EXPENSE', amount: 1, category: 'x' })).rejects.toThrow();
+    await expect(
+      store().addManualTransaction({ accountId: 'x', type: 'EXPENSE', amount: 1, category: 'x' }),
+    ).rejects.toThrow();
 
     await store().recategorize(t.id, CATEGORIES.FAMILY);
     expect(store().learnedCategories['MAQUIS CHEZ TANTI']).toBe(CATEGORIES.FAMILY);
@@ -70,9 +83,29 @@ describe('useFinanceStore', () => {
 
   test('prévisionnel : coche auto à la saisie, bascule manuelle, report', async () => {
     const { store, repos } = await setup();
-    await store().savePlannedItem({ label: 'Loyer', amount: 50000, kind: 'EXPENSE', category: CATEGORIES.RENT, keywords: ['kabore'], recurring: true });
-    await store().savePlannedItem({ label: 'Mariage Ali', amount: 20000, kind: 'EXPENSE', category: CATEGORIES.FAMILY, keywords: [], recurring: false });
-    await store().addManualTransaction({ accountId: 'cash-wallet', type: 'EXPENSE', amount: 50000, category: CATEGORIES.RENT, counterpartyName: 'M. KABORE' });
+    await store().savePlannedItem({
+      label: 'Loyer',
+      amount: 50000,
+      kind: 'EXPENSE',
+      category: CATEGORIES.RENT,
+      keywords: ['kabore'],
+      recurring: true,
+    });
+    await store().savePlannedItem({
+      label: 'Mariage Ali',
+      amount: 20000,
+      kind: 'EXPENSE',
+      category: CATEGORIES.FAMILY,
+      keywords: [],
+      recurring: false,
+    });
+    await store().addManualTransaction({
+      accountId: 'cash-wallet',
+      type: 'EXPENSE',
+      amount: 50000,
+      category: CATEGORIES.RENT,
+      counterpartyName: 'M. KABORE',
+    });
     const loyer = store().plannedItems.find(i => i.label === 'Loyer')!;
     expect(loyer.isDone).toBe(true);
     const mariage = store().plannedItems.find(i => i.label === 'Mariage Ali')!;
@@ -96,7 +129,14 @@ describe('useFinanceStore', () => {
     await store().toggleFixedExpensePaid('loyer');
     expect(store().paidFixedExpenseIds).toEqual([]);
 
-    await store().saveTontine({ name: 'Bureau', contributionAmount: 5000, frequency: 'MONTHLY', membersCount: 4, myTurn: 2, startDate: '2026-10-01' });
+    await store().saveTontine({
+      name: 'Bureau',
+      contributionAmount: 5000,
+      frequency: 'MONTHLY',
+      membersCount: 4,
+      myTurn: 2,
+      startDate: '2026-10-01',
+    });
     const tid = store().tontines[0].id;
     await store().payTontine(tid);
     await store().payTontine('nope');

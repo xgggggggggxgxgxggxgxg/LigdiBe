@@ -41,10 +41,13 @@ describe('calculateDailyBudget', () => {
   });
 
   test('les charges fixes restantes et les dépenses passées réduisent l’enveloppe', () => {
-    const c = { ...config, fixedExpenses: [
-      { id: 'loyer', label: 'Loyer', amount: 50000, dayOfMonth: 28 },
-      { id: 'canal', label: 'Canal+', amount: 10000, dayOfMonth: 5 },
-    ] };
+    const c = {
+      ...config,
+      fixedExpenses: [
+        { id: 'loyer', label: 'Loyer', amount: 50000, dayOfMonth: 28 },
+        { id: 'canal', label: 'Canal+', amount: 10000, dayOfMonth: 5 },
+      ],
+    };
     const txs = [
       tx({ amount: 20000, occurredAt: '2026-10-02T09:00:00' }),
       tx({ type: 'CASH_WITHDRAWAL', amount: 50000, occurredAt: '2026-10-03T09:00:00' }),
@@ -70,7 +73,10 @@ describe('calculateDailyBudget', () => {
     expect(warn.todayRemaining).toBe(857);
     const over = calculateDailyBudget(
       config,
-      [tx({ amount: 8000, occurredAt: '2026-10-13T08:00:00' }), tx({ type: 'FEE', amount: 100, occurredAt: '2026-10-13T08:00:00' })],
+      [
+        tx({ amount: 8000, occurredAt: '2026-10-13T08:00:00' }),
+        tx({ type: 'FEE', amount: 100, occurredAt: '2026-10-13T08:00:00' }),
+      ],
       TUESDAY,
     );
     expect(over.status).toBe('EXCEEDED');
@@ -95,7 +101,11 @@ describe('calculateDailyBudget', () => {
 
   test('budget annuel optionnel', () => {
     expect(calculateDailyBudget(config, [], TUESDAY).yearProgress).toBeUndefined();
-    const r = calculateDailyBudget({ ...config, yearlyBudget: 1000000 }, [tx({ amount: 100000, occurredAt: '2026-03-01T08:00:00' })], TUESDAY);
+    const r = calculateDailyBudget(
+      { ...config, yearlyBudget: 1000000 },
+      [tx({ amount: 100000, occurredAt: '2026-03-01T08:00:00' })],
+      TUESDAY,
+    );
     expect(r.yearSpent).toBe(100000);
     expect(r.yearProgress).toBeCloseTo(0.1);
   });

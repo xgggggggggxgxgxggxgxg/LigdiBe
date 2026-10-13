@@ -22,11 +22,7 @@ export const CATEGORIES = {
 export type CategoryName = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
 /** Catégories proposées dans la notification post-dépense (3 actions max sur Android). */
-export const QUICK_EXPENSE_CATEGORIES: ReadonlyArray<string> = [
-  CATEGORIES.FUEL,
-  CATEGORIES.GROCERIES,
-  CATEGORIES.FOOD,
-];
+export const QUICK_EXPENSE_CATEGORIES: ReadonlyArray<string> = [CATEGORIES.FUEL, CATEGORIES.GROCERIES, CATEGORIES.FOOD];
 
 export const EXPENSE_CATEGORY_LIST: ReadonlyArray<string> = [
   CATEGORIES.FOOD,

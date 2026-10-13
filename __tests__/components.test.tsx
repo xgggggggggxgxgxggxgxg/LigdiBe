@@ -1,3 +1,4 @@
+import '@testing-library/react-native/extend-expect';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import React from 'react';
 import { PaperProvider } from 'react-native-paper';
@@ -30,7 +31,11 @@ describe('DailyBudgetCard', () => {
   });
 
   test('alerte visuelle en cas de dépassement, badge week-end et série', () => {
-    const b = calculateDailyBudget(config, [tx({ amount: 50000, occurredAt: '2026-10-17T10:00:00' })], new Date(2026, 9, 17, 12));
+    const b = calculateDailyBudget(
+      config,
+      [tx({ amount: 50000, occurredAt: '2026-10-17T10:00:00' })],
+      new Date(2026, 9, 17, 12),
+    );
     wrap(<DailyBudgetCard budget={b} streak={4} />);
     expect(screen.getByTestId('budget-alert')).toBeTruthy();
     expect(screen.getByTestId('weekend-chip')).toBeTruthy();
@@ -52,7 +57,12 @@ describe('TransactionItem & BalanceCard', () => {
   });
 
   test('solde masqué', () => {
-    wrap(<BalanceCard account={{ id: 'a', name: 'Moov Money', provider: 'MOOV', type: 'MOMO', currentBalance: 9891 }} hidden />);
+    wrap(
+      <BalanceCard
+        account={{ id: 'a', name: 'Moov Money', provider: 'MOOV', type: 'MOMO', currentBalance: 9891 }}
+        hidden
+      />,
+    );
     expect(screen.getByText('•••••')).toBeTruthy();
   });
 });
@@ -65,7 +75,10 @@ describe('DashboardScreen', () => {
       { id: 'cash-wallet', name: 'Poche', provider: 'CASH', type: 'CASH', currentBalance: 1000 },
     ]);
     const now = new Date();
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T08:00:00`;
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(
+      2,
+      '0',
+    )}T08:00:00`;
     await repos.transactions.insertMany([
       tx({ id: 'e', amount: 6000, counterpartyName: 'INTOUCH BURKINA', occurredAt: iso }),
       tx({ id: 'i', type: 'INCOME', amount: 7070, counterpartyName: 'MME SANGARE', occurredAt: iso }),
@@ -89,7 +102,12 @@ describe('DashboardScreen', () => {
   });
 
   test('filterTransactions', () => {
-    const all = [tx({ type: 'EXPENSE' }), tx({ type: 'CASH_DEPOSIT' }), tx({ type: 'CASH_WITHDRAWAL' }), tx({ type: 'FEE' })];
+    const all = [
+      tx({ type: 'EXPENSE' }),
+      tx({ type: 'CASH_DEPOSIT' }),
+      tx({ type: 'CASH_WITHDRAWAL' }),
+      tx({ type: 'FEE' }),
+    ];
     expect(filterTransactions(all, 'CASH')).toHaveLength(2);
     expect(filterTransactions(all, 'FEE')).toHaveLength(1);
     expect(filterTransactions(all, 'ALL')).toHaveLength(4);

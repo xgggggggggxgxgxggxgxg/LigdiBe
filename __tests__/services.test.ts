@@ -22,7 +22,11 @@ describe('Notifications', () => {
     await notifyAfterRecording(repos, [tx({ id: 'x', amount: 6000, counterpartyName: 'INTOUCH' })], NOW);
     const n = (notifee.displayNotification as jest.Mock).mock.calls[0][0];
     expect(n.title).toBe('💸 Dépense de 6 000 FCFA détectée');
-    expect(n.android.actions.map((a: { title: string }) => a.title)).toEqual([CATEGORIES.FUEL, CATEGORIES.GROCERIES, CATEGORIES.FOOD]);
+    expect(n.android.actions.map((a: { title: string }) => a.title)).toEqual([
+      CATEGORIES.FUEL,
+      CATEGORIES.GROCERIES,
+      CATEGORIES.FOOD,
+    ]);
     expect(notifee.createTriggerNotification).toHaveBeenCalledTimes(2);
   });
 
@@ -31,8 +35,21 @@ describe('Notifications', () => {
     await notifyAfterRecording(repos, [tx({ type: 'CASH_WITHDRAWAL', amount: 1000 })], NOW);
     expect((notifee.displayNotification as jest.Mock).mock.calls[0][0].title).toContain('Poche');
 
-    await repos.debts.save({ id: 'd', contactName: 'ROMARIC', phone: '76900142', amount: 5000, amountRepaid: 0, direction: 'OWED_TO_ME', isSettled: false, createdAt: 'c' });
-    await notifyAfterRecording(repos, [tx({ type: 'INCOME', amount: 5000, counterpartyPhone: '76900142', counterpartyName: 'ROMARIC' })], NOW);
+    await repos.debts.save({
+      id: 'd',
+      contactName: 'ROMARIC',
+      phone: '76900142',
+      amount: 5000,
+      amountRepaid: 0,
+      direction: 'OWED_TO_ME',
+      isSettled: false,
+      createdAt: 'c',
+    });
+    await notifyAfterRecording(
+      repos,
+      [tx({ type: 'INCOME', amount: 5000, counterpartyPhone: '76900142', counterpartyName: 'ROMARIC' })],
+      NOW,
+    );
     const income = (notifee.displayNotification as jest.Mock).mock.calls[1][0];
     expect(income.body).toContain('remboursement de ROMARIC');
     expect(income.android.actions[0].pressAction.id).toBe('debt-repay:d');
@@ -48,18 +65,28 @@ describe('Notifications', () => {
     const ids = (notifee.displayNotification as jest.Mock).mock.calls.map(c => c[0].id);
     expect(ids).toEqual(['airtime-limit', 'budget-exceeded']);
     await notifyAfterRecording(repos, [recharge], NOW);
-    expect((notifee.displayNotification as jest.Mock).mock.calls.filter(c => c[0].id === 'airtime-limit')).toHaveLength(1);
+    expect((notifee.displayNotification as jest.Mock).mock.calls.filter(c => c[0].id === 'airtime-limit')).toHaveLength(
+      1,
+    );
   });
 
   test('rappels 07h30 et 21h30 programmés au bon moment', async () => {
-    await scheduleDailyReminders(DEFAULT_BUDGET_CONFIG, [tx({ amount: 999999, occurredAt: '2026-10-13T09:00:00' })], NOW);
+    await scheduleDailyReminders(
+      DEFAULT_BUDGET_CONFIG,
+      [tx({ amount: 999999, occurredAt: '2026-10-13T09:00:00' })],
+      NOW,
+    );
     const [[morning, mTrigger], [evening, eTrigger]] = (notifee.createTriggerNotification as jest.Mock).mock.calls;
     expect(new Date(mTrigger.timestamp)).toEqual(new Date(2026, 9, 14, 7, 30));
     expect(new Date(eTrigger.timestamp)).toEqual(new Date(2026, 9, 13, 21, 30));
     expect(morning.title).toMatch(/^☀️ Ton budget du jour/);
     expect(evening.body).toMatch(/dépassée/);
     jest.clearAllMocks();
-    await scheduleDailyReminders({ ...DEFAULT_BUDGET_CONFIG, specialDays: [{ date: '2026-10-14', multiplier: 2 }] }, [], NOW);
+    await scheduleDailyReminders(
+      { ...DEFAULT_BUDGET_CONFIG, specialDays: [{ date: '2026-10-14', multiplier: 2 }] },
+      [],
+      NOW,
+    );
     const [[m2], [e2]] = (notifee.createTriggerNotification as jest.Mock).mock.calls;
     expect(m2.body).toContain('bonus week-end');
     expect(e2.body).toContain('Bravo');
@@ -70,7 +97,13 @@ describe('Notifications', () => {
     await repos.transactions.insertMany([tx({ id: 't', counterpartyName: 'STATION X' })]);
     const onChange = jest.fn(async () => undefined);
     await handleNotificationEvent(
-      { type: EventType.ACTION_PRESS, detail: { pressAction: { id: `category:${CATEGORIES.FUEL}` }, notification: { id: 'tx-t', data: { transactionId: 't' } } } },
+      {
+        type: EventType.ACTION_PRESS,
+        detail: {
+          pressAction: { id: `category:${CATEGORIES.FUEL}` },
+          notification: { id: 'tx-t', data: { transactionId: 't' } },
+        },
+      },
       repos,
       onChange,
     );
@@ -79,12 +112,30 @@ describe('Notifications', () => {
     expect(notifee.cancelNotification).toHaveBeenCalledWith('tx-t');
     expect(onChange).toHaveBeenCalled();
 
-    await repos.debts.save({ id: 'd', contactName: 'A', amount: 5000, amountRepaid: 0, direction: 'OWED_TO_ME', isSettled: false, createdAt: 'c' });
-    await handleNotificationEvent({ type: EventType.ACTION_PRESS, detail: { pressAction: { id: 'debt-repay:d' }, notification: { data: { amount: '5000' } } } }, repos);
+    await repos.debts.save({
+      id: 'd',
+      contactName: 'A',
+      amount: 5000,
+      amountRepaid: 0,
+      direction: 'OWED_TO_ME',
+      isSettled: false,
+      createdAt: 'c',
+    });
+    await handleNotificationEvent(
+      {
+        type: EventType.ACTION_PRESS,
+        detail: { pressAction: { id: 'debt-repay:d' }, notification: { data: { amount: '5000' } } },
+      },
+      repos,
+    );
     expect(repos.store.debts[0].isSettled).toBe(true);
 
     await handleNotificationEvent({ type: EventType.PRESS, detail: {} }, repos, onChange);
-    await handleNotificationEvent({ type: EventType.ACTION_PRESS, detail: { pressAction: { id: 'autre' } } }, repos, onChange);
+    await handleNotificationEvent(
+      { type: EventType.ACTION_PRESS, detail: { pressAction: { id: 'autre' } } },
+      repos,
+      onChange,
+    );
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 });
@@ -126,7 +177,9 @@ describe('Export', () => {
 
     (RNFS.writeFile as jest.Mock).mockRejectedValueOnce(new Error('EACCES'));
     const json = await exportJsonBackup(repos, '2026-10', NOW);
-    expect(json.path).toBe('/storage/emulated/0/Android/data/com.ligdibe/files/LigdiBe_sauvegarde_20261013-100000.json');
+    expect(json.path).toBe(
+      '/storage/emulated/0/Android/data/com.ligdibe/files/LigdiBe_sauvegarde_20261013-100000.json',
+    );
 
     (RNFS.writeFile as jest.Mock).mockRejectedValue(new Error('disque plein'));
     await expect(exportTransactionsCsv(repos, NOW)).rejects.toThrow('disque plein');

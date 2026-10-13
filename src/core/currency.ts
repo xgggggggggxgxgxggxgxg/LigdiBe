@@ -23,6 +23,10 @@ export const formatCompact = (amount: number): string => {
   return formatFCFA(amount, { withUnit: false });
 };
 
-const trim = (n: number): string => n.toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
+const trim = (n: number): string =>
+  n
+    .toFixed(2)
+    .replace(/\.?0+$/, '')
+    .replace('.', ',');
 
 export const roundMoney = (n: number): number => Math.round(n * 100) / 100;

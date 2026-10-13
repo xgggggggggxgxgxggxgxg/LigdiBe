@@ -28,10 +28,17 @@ export const TransactionDetailModal = ({ transaction: t, onDismiss }: Props) => 
           </Text>
           <Text variant="bodyMedium">{tx.counterpartyName ?? tx.note ?? '—'}</Text>
           <Text variant="bodySmall" style={styles.muted}>
-            {tx.occurredAt.replace('T', ' à ').slice(0, 19)} · {tx.provider} · {tx.source === 'SMS' ? 'Détecté par SMS' : tx.source === 'SYSTEM' ? 'Écriture automatique' : 'Saisie manuelle'}
+            {tx.occurredAt.replace('T', ' à ').slice(0, 19)} · {tx.provider} ·{' '}
+            {tx.source === 'SMS'
+              ? 'Détecté par SMS'
+              : tx.source === 'SYSTEM'
+              ? 'Écriture automatique'
+              : 'Saisie manuelle'}
           </Text>
           {tx.fee + tx.tax > 0 && (
-            <Text variant="bodySmall">Frais {formatFCFA(tx.fee)} · Taxes {formatFCFA(tx.tax)}</Text>
+            <Text variant="bodySmall">
+              Frais {formatFCFA(tx.fee)} · Taxes {formatFCFA(tx.tax)}
+            </Text>
           )}
           {tx.reference && <Text variant="bodySmall">Réf. {tx.reference}</Text>}
           <Divider style={styles.divider} />

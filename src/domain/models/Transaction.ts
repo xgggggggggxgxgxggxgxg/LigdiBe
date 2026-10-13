@@ -1,19 +1,7 @@
-export type Provider =
-  | 'MOOV'
-  | 'ORANGE'
-  | 'UBA_WAVE'
-  | 'WAVE'
-  | 'TELECEL'
-  | 'ECOBANK'
-  | 'BANK'
-  | 'CASH';
+export type Provider = 'MOOV' | 'ORANGE' | 'UBA_WAVE' | 'WAVE' | 'TELECEL' | 'ECOBANK' | 'BANK' | 'CASH';
 
 /** Types produits par le parseur SMS. */
-export type ParsedTransactionType =
-  | 'EXPENSE'
-  | 'INCOME'
-  | 'CASH_WITHDRAWAL'
-  | 'AIRTIME_RECHARGE';
+export type ParsedTransactionType = 'EXPENSE' | 'INCOME' | 'CASH_WITHDRAWAL' | 'AIRTIME_RECHARGE';
 
 /**
  * Types du grand livre local. `FEE` isole les frais/taxes opérateur,
@@ -51,14 +39,8 @@ export interface Transaction {
 }
 
 /** Transactions qui réduisent réellement le patrimoine de l'utilisateur. */
-export const SPENDING_TYPES: ReadonlyArray<TransactionType> = [
-  'EXPENSE',
-  'AIRTIME_RECHARGE',
-  'FEE',
-];
+export const SPENDING_TYPES: ReadonlyArray<TransactionType> = ['EXPENSE', 'AIRTIME_RECHARGE', 'FEE'];
 
-export const isSpending = (tx: Pick<Transaction, 'type'>): boolean =>
-  SPENDING_TYPES.includes(tx.type);
+export const isSpending = (tx: Pick<Transaction, 'type'>): boolean => SPENDING_TYPES.includes(tx.type);
 
-export const isIncome = (tx: Pick<Transaction, 'type'>): boolean =>
-  tx.type === 'INCOME';
+export const isIncome = (tx: Pick<Transaction, 'type'>): boolean => tx.type === 'INCOME';

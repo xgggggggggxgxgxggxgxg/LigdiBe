@@ -130,20 +130,31 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       try {
         const r = await repos();
         const month = monthKey(now);
-        const [accounts, transactions, debts, plannedItems, tontines, budgetConfig, paid, learned, userName, onboarded, extraSenders] =
-          await Promise.all([
-            r.accounts.getAll(),
-            r.transactions.listBetween(loadWindowStart(now), '9999'),
-            r.debts.getAll(),
-            r.plannedItems.listByMonth(month),
-            r.tontines.getAll(),
-            r.settings.getBudgetConfig(),
-            r.settings.getJson<string[]>(PAID_FIXED_KEY(month), []),
-            r.settings.getJson<Record<string, string>>(LEARNED_CATEGORIES_KEY, {}),
-            r.settings.getJson<string>(USER_NAME_KEY, ''),
-            r.settings.getJson<boolean>(ONBOARDED_KEY, false),
-            r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
-          ]);
+        const [
+          accounts,
+          transactions,
+          debts,
+          plannedItems,
+          tontines,
+          budgetConfig,
+          paid,
+          learned,
+          userName,
+          onboarded,
+          extraSenders,
+        ] = await Promise.all([
+          r.accounts.getAll(),
+          r.transactions.listBetween(loadWindowStart(now), '9999'),
+          r.debts.getAll(),
+          r.plannedItems.listByMonth(month),
+          r.tontines.getAll(),
+          r.settings.getBudgetConfig(),
+          r.settings.getJson<string[]>(PAID_FIXED_KEY(month), []),
+          r.settings.getJson<Record<string, string>>(LEARNED_CATEGORIES_KEY, {}),
+          r.settings.getJson<string>(USER_NAME_KEY, ''),
+          r.settings.getJson<boolean>(ONBOARDED_KEY, false),
+          r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
+        ]);
         set({
           ready: true,
           error: undefined,
@@ -293,9 +304,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       if (!item) {
         return;
       }
-      const updated: PlannedItem = item.isDone && !matchedTransactionId
-        ? { ...item, isDone: false, matchedTransactionId: undefined }
-        : { ...item, isDone: true, matchedTransactionId: matchedTransactionId ?? item.matchedTransactionId };
+      const updated: PlannedItem =
+        item.isDone && !matchedTransactionId
+          ? { ...item, isDone: false, matchedTransactionId: undefined }
+          : { ...item, isDone: true, matchedTransactionId: matchedTransactionId ?? item.matchedTransactionId };
       await r.plannedItems.saveMany([updated]);
       set(s => ({ plannedItems: s.plannedItems.map(i => (i.id === itemId ? updated : i)) }));
     },
@@ -309,7 +321,10 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     async autoCheckPlannedItems() {
       const { plannedItems, transactions, now } = get();
       const month = monthKey(now);
-      const matched = autoMatchPlannedItems(plannedItems, transactions.filter(t => t.occurredAt.startsWith(month)));
+      const matched = autoMatchPlannedItems(
+        plannedItems,
+        transactions.filter(t => t.occurredAt.startsWith(month)),
+      );
       if (matched.length > 0) {
         const r = await repos();
         await r.plannedItems.saveMany(matched);
@@ -345,7 +360,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
 
     async saveTontine(input) {
       const r = await repos();
-      const tontine: Tontine = { ...input, id: input.id ?? generateId('tontine'), paidContributions: input.paidContributions ?? [] };
+      const tontine: Tontine = {
+        ...input,
+        id: input.id ?? generateId('tontine'),
+        paidContributions: input.paidContributions ?? [],
+      };
       await r.tontines.save(tontine);
       set({ tontines: await r.tontines.getAll() });
     },

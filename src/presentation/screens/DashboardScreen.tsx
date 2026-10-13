@@ -60,7 +60,10 @@ export const DashboardScreen = () => {
   const [selected, setSelected] = useState<Transaction>();
 
   const list = useMemo(
-    () => filterTransactions(transactions, filter).sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)).slice(0, 100),
+    () =>
+      filterTransactions(transactions, filter)
+        .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+        .slice(0, 100),
     [transactions, filter],
   );
 
@@ -71,7 +74,12 @@ export const DashboardScreen = () => {
           <Text variant="titleMedium" style={styles.heroText}>
             {userName ? `Bonjour ${userName} 👋🏾` : 'Bonjour 👋🏾'}
           </Text>
-          <IconButton icon={hidden ? 'eye-off' : 'eye'} iconColor="#fff" onPress={() => setHidden(h => !h)} testID="toggle-hide" />
+          <IconButton
+            icon={hidden ? 'eye-off' : 'eye'}
+            iconColor="#fff"
+            onPress={() => setHidden(h => !h)}
+            testID="toggle-hide"
+          />
         </View>
         <Text variant="labelLarge" style={styles.heroMuted}>
           Patrimoine total (MoMo + Banque + Poche)
@@ -92,7 +100,10 @@ export const DashboardScreen = () => {
           icon="cellphone-wireless"
           label="Crédit & data (mois)"
           value={formatFCFA(airtime.monthly_airtime_spent)}
-          hint={`Jour ${formatFCFA(airtime.daily_airtime_spent, { withUnit: false })} · An ${formatFCFA(airtime.yearly_airtime_spent, { withUnit: false })}`}
+          hint={`Jour ${formatFCFA(airtime.daily_airtime_spent, { withUnit: false })} · An ${formatFCFA(
+            airtime.yearly_airtime_spent,
+            { withUnit: false },
+          )}`}
           color={airtime.isOverMonthlyLimit ? palette.red : palette.green}
         />
         <StatTile
@@ -105,7 +116,13 @@ export const DashboardScreen = () => {
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
         {FILTERS.map(f => (
-          <Chip key={f.id} icon={f.icon} selected={filter === f.id} onPress={() => setFilter(f.id)} style={styles.filter} testID={`filter-${f.id}`}>
+          <Chip
+            key={f.id}
+            icon={f.icon}
+            selected={filter === f.id}
+            onPress={() => setFilter(f.id)}
+            style={styles.filter}
+            testID={`filter-${f.id}`}>
             {f.label}
           </Chip>
         ))}
@@ -146,7 +163,13 @@ export const DashboardScreen = () => {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.surface },
-  hero: { backgroundColor: palette.green, paddingHorizontal: 20, paddingBottom: 28, borderBottomLeftRadius: 28, borderBottomRightRadius: 28 },
+  hero: {
+    backgroundColor: palette.green,
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   heroText: { color: '#fff' },
   heroMuted: { color: '#fff', opacity: 0.8 },

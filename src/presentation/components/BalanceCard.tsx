@@ -12,7 +12,10 @@ interface Props {
 }
 
 export const BalanceCard = ({ account, hidden }: Props) => (
-  <Surface style={[styles.card, { borderTopColor: providerColor(account.provider) }]} elevation={1} testID={`balance-${account.id}`}>
+  <Surface
+    style={[styles.card, { borderTopColor: providerColor(account.provider) }]}
+    elevation={1}
+    testID={`balance-${account.id}`}>
     <View style={styles.row}>
       <Icon source={providerIcon(account.provider)} size={18} color={providerColor(account.provider)} />
       <Text variant="labelMedium" numberOfLines={1} style={styles.name}>

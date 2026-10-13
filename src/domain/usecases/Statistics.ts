@@ -18,7 +18,13 @@ export const topRecipients = (transactions: ReadonlyArray<Transaction>, limit = 
       continue;
     }
     const key = (t.counterpartyPhone ?? t.counterpartyName ?? '').toUpperCase().replace(/\s+/g, ' ');
-    const stat = map.get(key) ?? { key, name: t.counterpartyName ?? t.counterpartyPhone ?? key, phone: t.counterpartyPhone, total: 0, count: 0 };
+    const stat = map.get(key) ?? {
+      key,
+      name: t.counterpartyName ?? t.counterpartyPhone ?? key,
+      phone: t.counterpartyPhone,
+      total: 0,
+      count: 0,
+    };
     stat.total += t.amount;
     stat.count += 1;
     map.set(key, stat);
@@ -70,11 +76,17 @@ export const buildInsights = (monthTransactions: ReadonlyArray<Transaction>): In
   }
   if (airtime > 0) {
     const n = monthTransactions.filter(t => t.type === 'AIRTIME_RECHARGE').length;
-    insights.push({ id: 'airtime', message: `${n} recharges de crédit = ${Math.round(airtime)} FCFA partis en unités.` });
+    insights.push({
+      id: 'airtime',
+      message: `${n} recharges de crédit = ${Math.round(airtime)} FCFA partis en unités.`,
+    });
   }
   const top = spendingByCategory(monthTransactions).find(c => c.category !== CATEGORIES.FEES);
   if (top) {
-    insights.push({ id: 'top-category', message: `Ton premier poste de dépense : ${top.category} (${Math.round(top.share * 100)} %).` });
+    insights.push({
+      id: 'top-category',
+      message: `Ton premier poste de dépense : ${top.category} (${Math.round(top.share * 100)} %).`,
+    });
   }
   return insights;
 };

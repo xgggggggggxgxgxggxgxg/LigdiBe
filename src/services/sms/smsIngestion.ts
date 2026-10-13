@@ -39,7 +39,9 @@ export const processRealtimeSms = async (repos: Repositories, sms: NativeSms): P
 export const importSmsBacklog = async (repos: Repositories, sinceMs: number): Promise<IngestionReport> => {
   const report: IngestionReport = { recorded: 0, duplicates: 0, ignored: 0 };
   const uc = new ProcessIncomingSmsUseCase(repos);
-  const messages = [...(await readSmsInbox(sinceMs)), ...(await drainPendingSms())].sort((a, b) => a.timestamp - b.timestamp);
+  const messages = [...(await readSmsInbox(sinceMs)), ...(await drainPendingSms())].sort(
+    (a, b) => a.timestamp - b.timestamp,
+  );
   for (const sms of messages) {
     tally(report, await uc.execute({ body: sms.body, sender: sms.sender, receivedAt: new Date(sms.timestamp) }));
   }

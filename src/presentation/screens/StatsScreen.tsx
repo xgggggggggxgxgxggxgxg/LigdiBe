@@ -58,11 +58,27 @@ export const StatsScreen = () => {
           Statistiques — {formatMonthLabel(month)}
         </Text>
         <View style={styles.tiles}>
-          <StatTile testID="fees-tile" icon="percent-outline" label="Frais & taxes MoMo" value={formatFCFA(fees)} color={palette.red} />
-          <StatTile icon="cellphone-wireless" label="Crédit d'appel" value={formatFCFA(airtime)} color={palette.orange} />
+          <StatTile
+            testID="fees-tile"
+            icon="percent-outline"
+            label="Frais & taxes MoMo"
+            value={formatFCFA(fees)}
+            color={palette.red}
+          />
+          <StatTile
+            icon="cellphone-wireless"
+            label="Crédit d'appel"
+            value={formatFCFA(airtime)}
+            color={palette.orange}
+          />
         </View>
         <View style={styles.tiles}>
-          <StatTile icon="cash-fast" label="Retiré en espèces" value={formatFCFA(totalCashWithdrawn(monthTxs))} hint="Non compté en dépense" />
+          <StatTile
+            icon="cash-fast"
+            label="Retiré en espèces"
+            value={formatFCFA(totalCashWithdrawn(monthTxs))}
+            hint="Non compté en dépense"
+          />
         </View>
 
         <Card style={styles.card}>
@@ -115,7 +131,13 @@ export const StatsScreen = () => {
         <Card style={styles.card}>
           <Card.Title title="Exporter les données" subtitle="Fichiers horodatés dans Téléchargements" />
           <Card.Actions>
-            <Button icon="file-delimited-outline" mode="contained" loading={exporting} disabled={exporting} onPress={() => runExport('csv')} testID="export-csv">
+            <Button
+              icon="file-delimited-outline"
+              mode="contained"
+              loading={exporting}
+              disabled={exporting}
+              onPress={() => runExport('csv')}
+              testID="export-csv">
               CSV
             </Button>
             <Button icon="code-json" disabled={exporting} onPress={() => runExport('json')}>

@@ -90,9 +90,10 @@ export class SqliteTransactionRepository implements TransactionRepository {
   }
 
   async listRecent(limit: number): Promise<Transaction[]> {
-    const rows = await this.db.execute('SELECT * FROM transactions ORDER BY occurred_at DESC, created_at DESC LIMIT ?', [
-      limit,
-    ]);
+    const rows = await this.db.execute(
+      'SELECT * FROM transactions ORDER BY occurred_at DESC, created_at DESC LIMIT ?',
+      [limit],
+    );
     return rows.map(rowToTransaction);
   }
 
@@ -105,10 +106,10 @@ export class SqliteTransactionRepository implements TransactionRepository {
     if (entries.length === 0) {
       return;
     }
-    await this.db.execute(
-      `UPDATE transactions SET ${entries.map(([, col]) => `${col} = ?`).join(', ')} WHERE id = ?`,
-      [...entries.map(([prop]) => nul((patch as Record<string, unknown>)[prop])), id],
-    );
+    await this.db.execute(`UPDATE transactions SET ${entries.map(([, col]) => `${col} = ?`).join(', ')} WHERE id = ?`, [
+      ...entries.map(([prop]) => nul((patch as Record<string, unknown>)[prop])),
+      id,
+    ]);
   }
 
   async delete(id: string): Promise<void> {
@@ -149,7 +150,9 @@ export class SqliteDebtRepository implements DebtRepository {
   constructor(private readonly db: SqlDatabase) {}
 
   async getAll(): Promise<Debt[]> {
-    const rows = await this.db.execute('SELECT * FROM debts ORDER BY is_settled, due_date IS NULL, due_date, created_at DESC');
+    const rows = await this.db.execute(
+      'SELECT * FROM debts ORDER BY is_settled, due_date IS NULL, due_date, created_at DESC',
+    );
     return rows.map(r => ({
       id: r.id as string,
       contactName: r.contact_name as string,
@@ -168,7 +171,18 @@ export class SqliteDebtRepository implements DebtRepository {
     await this.db.execute(
       `INSERT OR REPLACE INTO debts (id, contact_name, phone, amount, amount_repaid, direction, is_settled, due_date, note, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [d.id, d.contactName, nul(d.phone), d.amount, d.amountRepaid, d.direction, d.isSettled ? 1 : 0, nul(d.dueDate), nul(d.note), d.createdAt],
+      [
+        d.id,
+        d.contactName,
+        nul(d.phone),
+        d.amount,
+        d.amountRepaid,
+        d.direction,
+        d.isSettled ? 1 : 0,
+        nul(d.dueDate),
+        nul(d.note),
+        d.createdAt,
+      ],
     );
   }
 
@@ -182,7 +196,9 @@ export class SqlitePlannedItemRepository implements PlannedItemRepository {
   constructor(private readonly db: SqlDatabase) {}
 
   async listByMonth(month: string): Promise<PlannedItem[]> {
-    const rows = await this.db.execute('SELECT * FROM planned_items WHERE month = ? ORDER BY kind DESC, rowid', [month]);
+    const rows = await this.db.execute('SELECT * FROM planned_items WHERE month = ? ORDER BY kind DESC, rowid', [
+      month,
+    ]);
     return rows.map(r => ({
       id: r.id as string,
       month: r.month as string,
@@ -202,7 +218,18 @@ export class SqlitePlannedItemRepository implements PlannedItemRepository {
       await this.db.execute(
         `INSERT OR REPLACE INTO planned_items (id, month, label, amount, kind, category, keywords, is_done, matched_transaction_id, recurring)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [i.id, i.month, i.label, i.amount, i.kind, i.category, JSON.stringify(i.keywords), i.isDone ? 1 : 0, nul(i.matchedTransactionId), i.recurring ? 1 : 0],
+        [
+          i.id,
+          i.month,
+          i.label,
+          i.amount,
+          i.kind,
+          i.category,
+          JSON.stringify(i.keywords),
+          i.isDone ? 1 : 0,
+          nul(i.matchedTransactionId),
+          i.recurring ? 1 : 0,
+        ],
       );
     }
   }
@@ -234,7 +261,16 @@ export class SqliteTontineRepository implements TontineRepository {
     await this.db.execute(
       `INSERT OR REPLACE INTO tontines (id, name, contribution_amount, frequency, members_count, my_turn, start_date, paid_contributions)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [t.id, t.name, t.contributionAmount, t.frequency, t.membersCount, t.myTurn, t.startDate, JSON.stringify(t.paidContributions)],
+      [
+        t.id,
+        t.name,
+        t.contributionAmount,
+        t.frequency,
+        t.membersCount,
+        t.myTurn,
+        t.startDate,
+        JSON.stringify(t.paidContributions),
+      ],
     );
   }
 

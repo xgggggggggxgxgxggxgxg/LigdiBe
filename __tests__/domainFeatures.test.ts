@@ -122,7 +122,11 @@ describe('Budget prévisionnel', () => {
   test('report sur le mois suivant', () => {
     const done = items.map((i, k) => (k < 3 ? { ...i, isDone: true } : i));
     let k = 0;
-    const next = carryOverToNextMonth(done, [plan({ label: 'Abonnement CANAL+', month: '2026-11' })], p => `${p}${++k}`);
+    const next = carryOverToNextMonth(
+      done,
+      [plan({ label: 'Abonnement CANAL+', month: '2026-11' })],
+      p => `${p}${++k}`,
+    );
     expect(next.map(i => i.label)).toEqual(['Salaire', 'Cadeau mariage']);
     expect(next.every(i => i.month === '2026-11' && !i.isDone && i.id.startsWith('plan'))).toBe(true);
     expect(carryOverToNextMonth([plan({ month: '2026-12', recurring: true })])[0].month).toBe('2027-01');
@@ -215,7 +219,9 @@ describe('Carnet de dettes', () => {
   test('détection automatique d’un remboursement', () => {
     const debts = [debt({}), debt({ id: 'd2', contactName: 'Awa', phone: undefined, direction: 'OWED_BY_ME' })];
     expect(findDebtForTransaction(debts, tx({ type: 'INCOME', counterpartyPhone: '22670112233' }))?.id).toBe('d1');
-    expect(findDebtForTransaction(debts, tx({ type: 'EXPENSE', counterpartyName: 'MME AWA OUEDRAOGO' }))?.id).toBe('d2');
+    expect(findDebtForTransaction(debts, tx({ type: 'EXPENSE', counterpartyName: 'MME AWA OUEDRAOGO' }))?.id).toBe(
+      'd2',
+    );
     expect(findDebtForTransaction(debts, tx({ type: 'FEE' }))).toBeUndefined();
     expect(findDebtForTransaction(debts, tx({ type: 'INCOME' }))).toBeUndefined();
   });
@@ -235,7 +241,14 @@ describe('Tontine', () => {
 
   test('statut mensuel : retards, prochaine échéance, mon tour', () => {
     const s = tontineStatus(t, NOW);
-    expect(s).toMatchObject({ potAmount: 60000, dueCount: 4, paidCount: 2, lateCount: 2, hasReceivedPot: true, roundsUntilMyTurn: 0 });
+    expect(s).toMatchObject({
+      potAmount: 60000,
+      dueCount: 4,
+      paidCount: 2,
+      lateCount: 2,
+      hasReceivedPot: true,
+      roundsUntilMyTurn: 0,
+    });
     expect(s.nextContributionDate).toEqual(new Date(2026, 10, 5));
     expect(s.myPickupDate).toEqual(new Date(2026, 9, 5));
   });

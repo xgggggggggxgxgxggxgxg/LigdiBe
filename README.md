@@ -1,79 +1,46 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# LigdiBe 💚
 
-# Getting Started
+> *« Ligdi » = l'argent en mooré.* Tracker financier **100 % hors-ligne** pour l'Afrique de l'Ouest et Centrale : tes SMS Mobile Money deviennent un budget, sans compte ni serveur.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+## Fonctionnalités
 
-## Step 1: Start the Metro Server
+| Domaine | Ce que fait l'app |
+|---|---|
+| Lecture SMS | Analyse en temps réel (même app fermée) des SMS Orange Money, Moov Money, Wave/UBA, Ecobank, Telecel… Whitelist d'expéditeurs, rejet des OTP / PIN / 2FA. |
+| Retrait kiosque | MoMo débité (montant + frais), **Poche (espèces) créditée du net** : un retrait n'est pas une dépense. Frais → « Frais & Taxes ». |
+| Crédit & data | Compteur jour / mois / an des micro-recharges, alerte plafond. |
+| Budget du jour | `(budget disponible − charges fixes) / jours restants` pondéré : ven. 18h → dim. ×1,5 (paramétrable), jours spéciaux (Tabaski…). Série de jours sous budget 🔥. |
+| Prévisionnel | Gains & dépenses prévus, coche automatique via le nom dans le SMS, sélection manuelle, report au mois suivant. |
+| Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |
+| Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, répartition par catégorie, bilan partageable. |
+| Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté. |
+| Notifications | Post-dépense avec catégories en un tap, rappel 07h30, bilan 21h30, alertes. |
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+## Architecture
 
-To start Metro, run the following command from the _root_ of your React Native project:
-
-```bash
-# using npm
-npm start
-
-# OR using Yarn
-yarn start
+```
+android/app/src/main/java/com/ligdibe/sms/  SmsReceiver.kt, SmsHeadlessTaskService.kt, SmsInboxModule.kt
+src/core/            devise FCFA, dates, catégories, identifiants
+src/data/parser/     SmsParserEngine (regex opérateurs), filtres de sécurité
+src/data/database/   op-sqlite + SQLCipher, migrations
+src/data/repositories/ dépôts SQL
+src/domain/          modèles, ports, cas d'usage (purs, testés)
+src/presentation/    store Zustand, hooks, composants, écrans, navigation
+src/services/        notifications Notifee, export, pont SMS
+__tests__/           Jest (parseur : 100 % de couverture)
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+## Démarrer
 
 ```bash
-# using npm
-npm run android
-
-# OR using Yarn
-yarn android
+npm install --legacy-peer-deps
+npm test            # 116+ tests
+npx tsc --noEmit
+npm run android     # appareil Android ou émulateur
 ```
 
-### For iOS
+Node ≥ 22.5 requis pour les tests des dépôts SQL (`node:sqlite`).
 
-```bash
-# using npm
-npm run ios
+## Publication Google Play
 
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
-
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
-
-## Step 3: Modifying your App
-
-Now that you have successfully run the app, let's modify it.
-
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
-
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Les permissions `RECEIVE_SMS` / `READ_SMS` exigent la déclaration « Permissions SMS et journal d'appels » (exception *gestion financière basée sur les SMS*). Rien ne quitte l'appareil : l'app n'utilise pas Internet en production.

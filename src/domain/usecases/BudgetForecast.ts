@@ -57,7 +57,10 @@ const normalize = (s: string): string =>
 
 const STOP_WORDS = new Set(['DE', 'DU', 'LA', 'LE', 'LES', 'DES', 'ET', 'A', 'AU', 'POUR', 'MME', 'M', 'MR']);
 
-const tokens = (s: string): string[] => normalize(s).split(' ').filter(w => w.length > 1 && !STOP_WORDS.has(w));
+const tokens = (s: string): string[] =>
+  normalize(s)
+    .split(' ')
+    .filter(w => w.length > 1 && !STOP_WORDS.has(w));
 
 export interface MatchCandidate {
   transaction: Transaction;
@@ -80,7 +83,9 @@ export const suggestMatches = (
     .filter(t => !excludeIds.has(t.id))
     .filter(t => (item.kind === 'INCOME' ? isIncome(t) : isSpending(t)))
     .map(t => {
-      const hay = new Set(tokens(`${t.counterpartyName ?? ''} ${t.counterpartyPhone ?? ''} ${t.category} ${t.note ?? ''}`));
+      const hay = new Set(
+        tokens(`${t.counterpartyName ?? ''} ${t.counterpartyPhone ?? ''} ${t.category} ${t.note ?? ''}`),
+      );
       const hits = [...wanted].filter(w => hay.has(w)).length;
       const nameScore = wanted.size ? hits / wanted.size : 0;
       const amountScore = item.amount > 0 ? Math.max(0, 1 - Math.abs(t.amount - item.amount) / item.amount) : 0;

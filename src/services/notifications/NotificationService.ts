@@ -33,8 +33,16 @@ const AIRTIME_ALERT_KEY = (month: string) => `airtimeAlert:${month}`;
 
 export const ensureNotificationChannels = async (): Promise<void> => {
   await notifee.requestPermission();
-  await notifee.createChannel({ id: CHANNELS.TRANSACTIONS, name: 'Transactions détectées', importance: AndroidImportance.HIGH });
-  await notifee.createChannel({ id: CHANNELS.REMINDERS, name: 'Rappels budget (matin & soir)', importance: AndroidImportance.DEFAULT });
+  await notifee.createChannel({
+    id: CHANNELS.TRANSACTIONS,
+    name: 'Transactions détectées',
+    importance: AndroidImportance.HIGH,
+  });
+  await notifee.createChannel({
+    id: CHANNELS.REMINDERS,
+    name: 'Rappels budget (matin & soir)',
+    importance: AndroidImportance.DEFAULT,
+  });
   await notifee.createChannel({ id: CHANNELS.ALERTS, name: 'Alertes dépassement', importance: AndroidImportance.HIGH });
 };
 
@@ -86,7 +94,12 @@ export const notifyAlert = async (id: string, title: string, body: string): Prom
     id,
     title,
     body,
-    android: { channelId: CHANNELS.ALERTS, smallIcon: 'ic_launcher', pressAction: { id: 'default' }, style: { type: AndroidStyle.BIGTEXT, text: body } },
+    android: {
+      channelId: CHANNELS.ALERTS,
+      smallIcon: 'ic_launcher',
+      pressAction: { id: 'default' },
+      style: { type: AndroidStyle.BIGTEXT, text: body },
+    },
   });
 };
 
@@ -116,10 +129,17 @@ export const scheduleDailyReminders = async (
     {
       id: MORNING_ID,
       title: `☀️ Ton budget du jour : ${formatFCFA(mb.todayBudget)}`,
-      body: `Il reste ${formatFCFA(Math.max(0, mb.availableForRestOfMonth))} pour ${mb.remainingDays} jours${weekend}. Bonne journée !`,
+      body: `Il reste ${formatFCFA(Math.max(0, mb.availableForRestOfMonth))} pour ${
+        mb.remainingDays
+      } jours${weekend}. Bonne journée !`,
       android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
     },
-    { type: TriggerType.TIMESTAMP, timestamp: morning.getTime(), repeatFrequency: RepeatFrequency.DAILY, alarmManager: { allowWhileIdle: true } },
+    {
+      type: TriggerType.TIMESTAMP,
+      timestamp: morning.getTime(),
+      repeatFrequency: RepeatFrequency.DAILY,
+      alarmManager: { allowWhileIdle: true },
+    },
   );
 
   const verdict =
@@ -133,12 +153,21 @@ export const scheduleDailyReminders = async (
       body: `${verdict} Pense à noter tes dépenses en espèces.`,
       android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
     },
-    { type: TriggerType.TIMESTAMP, timestamp: evening.getTime(), repeatFrequency: RepeatFrequency.DAILY, alarmManager: { allowWhileIdle: true } },
+    {
+      type: TriggerType.TIMESTAMP,
+      timestamp: evening.getTime(),
+      repeatFrequency: RepeatFrequency.DAILY,
+      alarmManager: { allowWhileIdle: true },
+    },
   );
 };
 
 /** Notifications et alertes après l'enregistrement d'une transaction SMS. */
-export const notifyAfterRecording = async (repos: Repositories, recorded: ReadonlyArray<Transaction>, now = new Date()): Promise<void> => {
+export const notifyAfterRecording = async (
+  repos: Repositories,
+  recorded: ReadonlyArray<Transaction>,
+  now = new Date(),
+): Promise<void> => {
   const main = recorded[0];
   if (!main) {
     return;
@@ -164,7 +193,9 @@ export const notifyAfterRecording = async (repos: Repositories, recorded: Readon
       await notifyAlert(
         'airtime-limit',
         `📶 Crédit & data : ${formatFCFA(airtime.monthly_airtime_spent)} ce mois`,
-        `${airtime.monthlyRechargeCount} petites recharges ont dépassé ton plafond de ${formatFCFA(config.monthlyAirtimeLimit)}. Un forfait mensuel serait peut-être moins cher.`,
+        `${airtime.monthlyRechargeCount} petites recharges ont dépassé ton plafond de ${formatFCFA(
+          config.monthlyAirtimeLimit,
+        )}. Un forfait mensuel serait peut-être moins cher.`,
       );
     }
   }
@@ -172,7 +203,13 @@ export const notifyAfterRecording = async (repos: Repositories, recorded: Readon
   if (recorded.some(isSpending)) {
     const b = calculateDailyBudget(config, transactions, now, paid);
     if (b.status === 'EXCEEDED') {
-      await notifyAlert('budget-exceeded', '🚨 Enveloppe du jour dépassée', `Tu as dépensé ${formatFCFA(b.todaySpent)} sur ${formatFCFA(b.todayBudget)} autorisés aujourd'hui. Le reste du mois est ré-équilibré automatiquement.`);
+      await notifyAlert(
+        'budget-exceeded',
+        '🚨 Enveloppe du jour dépassée',
+        `Tu as dépensé ${formatFCFA(b.todaySpent)} sur ${formatFCFA(
+          b.todayBudget,
+        )} autorisés aujourd'hui. Le reste du mois est ré-équilibré automatiquement.`,
+      );
     }
   }
   await scheduleDailyReminders(config, transactions, now, paid);
@@ -182,7 +219,11 @@ export const notifyAfterRecording = async (repos: Repositories, recorded: Readon
  * Gestion des actions de notification (premier plan ET arrière-plan) :
  * catégorisation en un tap, confirmation de remboursement de dette.
  */
-export const handleNotificationEvent = async (event: Event, repos: Repositories, onChange?: () => Promise<void>): Promise<void> => {
+export const handleNotificationEvent = async (
+  event: Event,
+  repos: Repositories,
+  onChange?: () => Promise<void>,
+): Promise<void> => {
   if (event.type !== EventType.ACTION_PRESS) {
     return;
   }

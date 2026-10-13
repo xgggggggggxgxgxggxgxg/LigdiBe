@@ -26,7 +26,13 @@ describe('SQLite - dépôts', () => {
   test('transactions : insertion, recherche, mise à jour, suppression en cascade', async () => {
     const { repos } = await setup();
     await repos.transactions.insertMany([
-      tx({ id: 'a', reference: 'R1', smsFingerprint: 'fp1', occurredAt: '2026-10-01T10:00:00', counterpartyName: 'ALI' }),
+      tx({
+        id: 'a',
+        reference: 'R1',
+        smsFingerprint: 'fp1',
+        occurredAt: '2026-10-01T10:00:00',
+        counterpartyName: 'ALI',
+      }),
       tx({ id: 'b', parentId: 'a', type: 'FEE', occurredAt: '2026-10-01T10:00:00' }),
       tx({ id: 'c', occurredAt: '2026-09-01T10:00:00' }),
     ]);
@@ -41,7 +47,10 @@ describe('SQLite - dépôts', () => {
     expect((await repos.transactions.listRecent(1))[0].occurredAt).toBe('2026-10-01T10:00:00');
     await repos.transactions.update('a', { category: 'Famille', note: 'Maman' });
     await repos.transactions.update('a', {});
-    expect((await repos.transactions.listAll()).find(t => t.id === 'a')).toMatchObject({ category: 'Famille', note: 'Maman' });
+    expect((await repos.transactions.listAll()).find(t => t.id === 'a')).toMatchObject({
+      category: 'Famille',
+      note: 'Maman',
+    });
     await repos.transactions.delete('a');
     expect((await repos.transactions.listAll()).map(t => t.id)).toEqual(['c']);
   });
@@ -49,26 +58,64 @@ describe('SQLite - dépôts', () => {
   test('comptes : upsert', async () => {
     const { repos } = await setup();
     await repos.accounts.saveMany([{ id: 'x', name: 'X', provider: 'MOOV', type: 'MOMO', currentBalance: 10 }]);
-    await repos.accounts.saveMany([{ id: 'x', name: 'X', provider: 'MOOV', type: 'MOMO', currentBalance: 20, updatedAt: 'u' }]);
-    expect(await repos.accounts.getAll()).toEqual([{ id: 'x', name: 'X', provider: 'MOOV', type: 'MOMO', currentBalance: 20, updatedAt: 'u' }]);
+    await repos.accounts.saveMany([
+      { id: 'x', name: 'X', provider: 'MOOV', type: 'MOMO', currentBalance: 20, updatedAt: 'u' },
+    ]);
+    expect(await repos.accounts.getAll()).toEqual([
+      { id: 'x', name: 'X', provider: 'MOOV', type: 'MOMO', currentBalance: 20, updatedAt: 'u' },
+    ]);
   });
 
   test('dettes, prévisionnel, tontines, paramètres', async () => {
     const { repos } = await setup();
-    const debt = { id: 'd', contactName: 'Awa', amount: 5000, amountRepaid: 0, direction: 'OWED_TO_ME' as const, isSettled: false, createdAt: 'c' };
+    const debt = {
+      id: 'd',
+      contactName: 'Awa',
+      amount: 5000,
+      amountRepaid: 0,
+      direction: 'OWED_TO_ME' as const,
+      isSettled: false,
+      createdAt: 'c',
+    };
     await repos.debts.save(debt);
     await repos.debts.save({ ...debt, id: 'd2', phone: '70', dueDate: '2026-10-20', note: 'n', isSettled: true });
-    expect(await repos.debts.getAll()).toEqual([debt, { ...debt, id: 'd2', phone: '70', dueDate: '2026-10-20', note: 'n', isSettled: true }]);
+    expect(await repos.debts.getAll()).toEqual([
+      debt,
+      { ...debt, id: 'd2', phone: '70', dueDate: '2026-10-20', note: 'n', isSettled: true },
+    ]);
     await repos.debts.delete('d');
     expect(await repos.debts.getAll()).toHaveLength(1);
 
-    const item = { id: 'p', month: '2026-10', label: 'Loyer', amount: 75000, kind: 'EXPENSE' as const, category: 'Loyer', keywords: ['kabore'], isDone: true, matchedTransactionId: 't', recurring: true };
-    await repos.plannedItems.saveMany([item, { ...item, id: 'p2', month: '2026-11', isDone: false, matchedTransactionId: undefined, recurring: false }]);
+    const item = {
+      id: 'p',
+      month: '2026-10',
+      label: 'Loyer',
+      amount: 75000,
+      kind: 'EXPENSE' as const,
+      category: 'Loyer',
+      keywords: ['kabore'],
+      isDone: true,
+      matchedTransactionId: 't',
+      recurring: true,
+    };
+    await repos.plannedItems.saveMany([
+      item,
+      { ...item, id: 'p2', month: '2026-11', isDone: false, matchedTransactionId: undefined, recurring: false },
+    ]);
     expect(await repos.plannedItems.listByMonth('2026-10')).toEqual([item]);
     await repos.plannedItems.delete('p');
     expect(await repos.plannedItems.listByMonth('2026-10')).toEqual([]);
 
-    const t = { id: 't', name: 'Bureau', contributionAmount: 10000, frequency: 'MONTHLY' as const, membersCount: 5, myTurn: 2, startDate: '2026-10-01', paidContributions: ['2026-10-01'] };
+    const t = {
+      id: 't',
+      name: 'Bureau',
+      contributionAmount: 10000,
+      frequency: 'MONTHLY' as const,
+      membersCount: 5,
+      myTurn: 2,
+      startDate: '2026-10-01',
+      paidContributions: ['2026-10-01'],
+    };
     await repos.tontines.save(t);
     expect(await repos.tontines.getAll()).toEqual([t]);
     await repos.tontines.delete('t');

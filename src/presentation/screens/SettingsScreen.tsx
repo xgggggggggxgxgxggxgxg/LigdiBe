@@ -45,7 +45,9 @@ export const SettingsScreen = () => {
   const [testResult, setTestResult] = useState<ParsedSms | null | undefined>();
 
   useEffect(() => {
-    hasSmsPermissions().then(setSmsGranted).catch(() => setSmsGranted(false));
+    hasSmsPermissions()
+      .then(setSmsGranted)
+      .catch(() => setSmsGranted(false));
   }, []);
 
   const update = (patch: Partial<BudgetConfig>) => saveBudgetConfig({ ...config, ...patch });
@@ -68,7 +70,10 @@ export const SettingsScreen = () => {
       const granted = smsGranted || (await requestSmsPermissions());
       setSmsGranted(granted);
       if (!granted) {
-        Alert.alert('Permission refusée', 'LigdiBe a besoin de lire les SMS des opérateurs pour remplir ton budget automatiquement.');
+        Alert.alert(
+          'Permission refusée',
+          'LigdiBe a besoin de lire les SMS des opérateurs pour remplir ton budget automatiquement.',
+        );
         return;
       }
       const report = await importSmsBacklog(await getRepositories(), Date.now() - 90 * DAY_MS);
@@ -110,31 +115,62 @@ export const SettingsScreen = () => {
         </Card>
 
         <Card style={styles.card}>
-          <Card.Title title="Charges fixes" subtitle="Loyer, scolarité, électricité… réservées avant le budget du jour" />
+          <Card.Title
+            title="Charges fixes"
+            subtitle="Loyer, scolarité, électricité… réservées avant le budget du jour"
+          />
           {config.fixedExpenses.map(f => (
             <List.Item
               key={f.id}
               title={f.label}
               description={`${formatFCFA(f.amount)} · le ${f.dayOfMonth} du mois`}
-              right={() => <IconButton icon="delete-outline" onPress={() => update({ fixedExpenses: config.fixedExpenses.filter(x => x.id !== f.id) })} />}
+              right={() => (
+                <IconButton
+                  icon="delete-outline"
+                  onPress={() => update({ fixedExpenses: config.fixedExpenses.filter(x => x.id !== f.id) })}
+                />
+              )}
             />
           ))}
           <Card.Content>
-            <TextInput mode="outlined" dense label="Libellé" value={fixedLabel} onChangeText={setFixedLabel} style={styles.input} />
+            <TextInput
+              mode="outlined"
+              dense
+              label="Libellé"
+              value={fixedLabel}
+              onChangeText={setFixedLabel}
+              style={styles.input}
+            />
             <View style={styles.row}>
               <View style={styles.flex2}>
                 <AmountInput label="Montant" value={fixedAmount} onChangeText={setFixedAmount} />
               </View>
-              <TextInput mode="outlined" label="Jour" value={fixedDay} onChangeText={setFixedDay} keyboardType="number-pad" style={styles.flex1} />
+              <TextInput
+                mode="outlined"
+                label="Jour"
+                value={fixedDay}
+                onChangeText={setFixedDay}
+                keyboardType="number-pad"
+                style={styles.flex1}
+              />
             </View>
             <Button
               icon="plus"
-              disabled={!fixedLabel.trim() || parseInputAmount(fixedAmount) <= 0 || !(Number(fixedDay) >= 1 && Number(fixedDay) <= 31)}
+              disabled={
+                !fixedLabel.trim() ||
+                parseInputAmount(fixedAmount) <= 0 ||
+                !(Number(fixedDay) >= 1 && Number(fixedDay) <= 31)
+              }
               onPress={async () => {
                 await update({
                   fixedExpenses: [
                     ...config.fixedExpenses,
-                    { id: generateId('fixed'), label: fixedLabel.trim(), amount: parseInputAmount(fixedAmount), dayOfMonth: Number(fixedDay) },
+                    {
+                      id: generateId('fixed'),
+                      label: fixedLabel.trim(),
+                      amount: parseInputAmount(fixedAmount),
+                      dayOfMonth: Number(fixedDay),
+                    },
                   ],
                 });
                 setFixedLabel('');
@@ -151,14 +187,31 @@ export const SettingsScreen = () => {
           <Card.Content>
             <View style={styles.chips}>
               {config.specialDays.map(d => (
-                <Chip key={d.date} onClose={() => update({ specialDays: config.specialDays.filter(x => x.date !== d.date) })}>
+                <Chip
+                  key={d.date}
+                  onClose={() => update({ specialDays: config.specialDays.filter(x => x.date !== d.date) })}>
                   {d.date} ×{d.multiplier}
                 </Chip>
               ))}
             </View>
             <View style={styles.row}>
-              <TextInput mode="outlined" dense label="AAAA-MM-JJ" value={specialDate} onChangeText={setSpecialDate} style={styles.flex2} />
-              <TextInput mode="outlined" dense label="Coef" value={specialMult} onChangeText={setSpecialMult} keyboardType="decimal-pad" style={styles.flex1} />
+              <TextInput
+                mode="outlined"
+                dense
+                label="AAAA-MM-JJ"
+                value={specialDate}
+                onChangeText={setSpecialDate}
+                style={styles.flex2}
+              />
+              <TextInput
+                mode="outlined"
+                dense
+                label="Coef"
+                value={specialMult}
+                onChangeText={setSpecialMult}
+                keyboardType="decimal-pad"
+                style={styles.flex1}
+              />
               <IconButton
                 icon="plus"
                 disabled={!/^\d{4}-\d{2}-\d{2}$/.test(specialDate) || !(Number(specialMult.replace(',', '.')) > 0)}
@@ -177,12 +230,24 @@ export const SettingsScreen = () => {
         </Card>
 
         <Card style={styles.card}>
-          <Card.Title title="Lecture des SMS" subtitle={isSmsSupported() ? (smsGranted ? 'Activée ✅' : 'Désactivée') : 'Disponible sur Android uniquement'} />
+          <Card.Title
+            title="Lecture des SMS"
+            subtitle={
+              isSmsSupported() ? (smsGranted ? 'Activée ✅' : 'Désactivée') : 'Disponible sur Android uniquement'
+            }
+          />
           <Card.Content>
             <Text variant="bodySmall" style={styles.muted}>
-              Seuls les SMS des expéditeurs agréés (Orange Money, Moov Money, Wave, UBA, Ecobank, Telecel…) sont analysés. Les codes OTP / PIN sont ignorés et rien ne quitte ton téléphone.
+              Seuls les SMS des expéditeurs agréés (Orange Money, Moov Money, Wave, UBA, Ecobank, Telecel…) sont
+              analysés. Les codes OTP / PIN sont ignorés et rien ne quitte ton téléphone.
             </Text>
-            <Button mode="contained-tonal" icon="message-processing-outline" loading={importing} disabled={importing} onPress={importHistory} style={styles.input}>
+            <Button
+              mode="contained-tonal"
+              icon="message-processing-outline"
+              loading={importing}
+              disabled={importing}
+              onPress={importHistory}
+              style={styles.input}>
               {smsGranted ? 'Importer les 90 derniers jours' : 'Autoriser et importer'}
             </Button>
             <TextInput
@@ -200,7 +265,14 @@ export const SettingsScreen = () => {
         <Card style={styles.card}>
           <Card.Title title="Tester un SMS" subtitle="Colle un SMS opérateur pour vérifier qu'il est reconnu" />
           <Card.Content>
-            <TextInput mode="outlined" multiline numberOfLines={4} value={testSms} onChangeText={setTestSms} style={styles.input} />
+            <TextInput
+              mode="outlined"
+              multiline
+              numberOfLines={4}
+              value={testSms}
+              onChangeText={setTestSms}
+              style={styles.input}
+            />
             <View style={styles.row}>
               <Button onPress={() => setTestResult(parseTransactionSms(testSms))} disabled={!testSms.trim()}>
                 Analyser
@@ -209,7 +281,13 @@ export const SettingsScreen = () => {
                 disabled={!testResult}
                 onPress={async () => {
                   const r = await ingestSms({ body: testSms });
-                  Alert.alert(r.status === 'RECORDED' ? 'Ajouté ✅' : r.status === 'DUPLICATE' ? 'Déjà enregistré' : 'Non reconnu');
+                  Alert.alert(
+                    r.status === 'RECORDED'
+                      ? 'Ajouté ✅'
+                      : r.status === 'DUPLICATE'
+                      ? 'Déjà enregistré'
+                      : 'Non reconnu',
+                  );
                 }}>
                 Enregistrer
               </Button>

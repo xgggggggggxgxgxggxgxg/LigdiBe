@@ -4,17 +4,30 @@ import type { ParsedSms } from '../../data/parser/SmsParserEngine';
 /** Mots-clés marchands courants en Afrique de l'Ouest → catégorie. */
 const KEYWORD_RULES: ReadonlyArray<[RegExp, string]> = [
   [/\b(SONABEL|ONEA|CIE|SODECI|SENELEC|SDE|SEN'?EAU|CANAL|STARTIMES|INTOUCH|FACTURE|EDM)\b/i, CATEGORIES.BILLS],
-  [/\b(TOTAL(?:ENERGIES)?|SHELL|OIL ?LIBYA|VIVO|STATION|PETRO(?:LE)?|CARBURANT|ESSENCE|SOMAP|SONABHY)\b/i, CATEGORIES.FUEL],
-  [/\b(SUPER ?MARCH[EÉ]|MARINA|PRIX ?BAS|AUCHAN|CARREFOUR|CASINO|LEADER PRICE|MARCH[EÉ]|ALIMENTATION|BOUTIQUE|KIOSQUE)\b/i, CATEGORIES.GROCERIES],
+  [
+    /\b(TOTAL(?:ENERGIES)?|SHELL|OIL ?LIBYA|VIVO|STATION|PETRO(?:LE)?|CARBURANT|ESSENCE|SOMAP|SONABHY)\b/i,
+    CATEGORIES.FUEL,
+  ],
+  [
+    /\b(SUPER ?MARCH[EÉ]|MARINA|PRIX ?BAS|AUCHAN|CARREFOUR|CASINO|LEADER PRICE|MARCH[EÉ]|ALIMENTATION|BOUTIQUE|KIOSQUE)\b/i,
+    CATEGORIES.GROCERIES,
+  ],
   [/\b(RESTAU(?:RANT)?|MAQUIS|KFC|PIZZA|FAST ?FOOD|DIBITERIE|CAF[EÉ]|BAR|GRILL|CHICKEN|BURGER)\b/i, CATEGORIES.FOOD],
   [/\b(PHARMA(?:CIE)?|CLINIQUE|H[OÔ]PITAL|CSPS|CHU|LABO(?:RATOIRE)?|M[EÉ]DICAL)\b/i, CATEGORIES.HEALTH],
   [/\b([EÉ]COLE|LYC[EÉ]E|COLL[EÈ]GE|UNIVERSIT[EÉ]|INSTITUT|SCOLARIT[EÉ]|ISGE|2IE)\b/i, CATEGORIES.EDUCATION],
-  [/\b(TAXI|YANGO|HEETCH|GOZEM|STAF|TCV|RAKIETA|SOTRACO|BUS|TRANSPORT|AIR ?BURKINA|AIR ?C[OÔ]TE)\b/i, CATEGORIES.TRANSPORT],
+  [
+    /\b(TAXI|YANGO|HEETCH|GOZEM|STAF|TCV|RAKIETA|SOTRACO|BUS|TRANSPORT|AIR ?BURKINA|AIR ?C[OÔ]TE)\b/i,
+    CATEGORIES.TRANSPORT,
+  ],
   [/\b(LOYER|BAILLEUR|IMMOBILIER|AGENCE IMMO)\b/i, CATEGORIES.RENT],
   [/\b(TONTINE)\b/i, CATEGORIES.TONTINE],
 ];
 
-export const counterpartyKey = (p: { counterpartyPhone?: string; counterpartyName?: string; merchantOrRecipient?: string }): string | undefined => {
+export const counterpartyKey = (p: {
+  counterpartyPhone?: string;
+  counterpartyName?: string;
+  merchantOrRecipient?: string;
+}): string | undefined => {
   const raw = p.counterpartyPhone ?? p.merchantOrRecipient ?? p.counterpartyName;
   return raw ? raw.toUpperCase().replace(/\s+/g, ' ').trim() : undefined;
 };
