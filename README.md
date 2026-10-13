@@ -13,8 +13,15 @@
 | Prévisionnel | Gains & dépenses prévus, coche automatique via le nom dans le SMS, sélection manuelle, report au mois suivant. |
 | Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |
 | Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, répartition par catégorie, bilan partageable. |
-| Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté. |
-| Notifications | Post-dépense avec catégories en un tap, rappel 07h30, bilan 21h30, alertes. |
+| Dépôt chez un agent | Poche débitée, MoMo crédité : ni revenu ni dépense. |
+| Enveloppes | Plafonds mensuels par catégorie, alerte à 80 % et 100 %. |
+| Récurrences | Détection automatique des opérations mensuelles (abonnements, loyer, salaire) proposées au prévisionnel. |
+| Épargne | Objectifs (Tabaski, rentrée, moto…) avec effort quotidien/hebdomadaire et suivi du rythme. |
+| Gamification | Série de jours sous budget 🔥, 8 badges, défi de la semaine. |
+| Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté, **restauration** de sauvegarde (changement de téléphone). |
+| Sécurité | Verrouillage par code PIN (haché, salé, blocage après 5 essais), soldes masquables. |
+| Notifications | Post-dépense avec catégories en un tap, rappel 07h30, bilan 21h30, bilan mensuel le 1er, rappel prévisionnel le 28, alertes. |
+| Confort | Mode sombre (auto/clair/sombre), libellés accessibles TalkBack. |
 
 ## Architecture
 
@@ -34,7 +41,7 @@ __tests__/           Jest (parseur : 100 % de couverture)
 
 ```bash
 npm install --legacy-peer-deps
-npm test            # 116+ tests
+npm test            # 160+ tests
 npx tsc --noEmit
 npm run android     # appareil Android ou émulateur
 ```
