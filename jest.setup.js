@@ -21,6 +21,8 @@ jest.mock('react-native-fs', () => ({
   ExternalDirectoryPath: '/storage/emulated/0/Android/data/com.ligdibe/files',
   DocumentDirectoryPath: '/data/user/0/com.ligdibe/files',
   writeFile: jest.fn(async () => undefined),
+  readFile: jest.fn(async () => ''),
+  readDir: jest.fn(async () => []),
 }));
 
 jest.mock('react-native-safe-area-context', () => {

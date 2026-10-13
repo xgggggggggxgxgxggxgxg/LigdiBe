@@ -2,6 +2,9 @@ import type { Account } from '../domain/models/Account';
 import type { Debt } from '../domain/models/Debt';
 import type { PlannedItem } from '../domain/models/PlannedItem';
 import type { Transaction } from '../domain/models/Transaction';
+import type { BudgetConfig } from '../domain/models/Budget';
+import type { SavingsGoal } from '../domain/models/SavingsGoal';
+import type { Tontine } from '../domain/models/Tontine';
 
 const CSV_COLUMNS: ReadonlyArray<keyof Transaction> = [
   'occurredAt',
@@ -42,13 +45,46 @@ export const transactionsToCsv = (transactions: ReadonlyArray<Transaction>, sep 
 
 export interface BackupSnapshot {
   app: 'LigdiBe';
-  version: 1;
+  /** v1 : comptes, transactions, dettes, prévisionnel du mois. v2 : + tout le prévisionnel, tontines, objectifs, budget. */
+  version: 1 | 2;
   exportedAt: string;
   accounts: Account[];
   transactions: Transaction[];
   debts: Debt[];
   plannedItems: PlannedItem[];
+  tontines?: Tontine[];
+  savingsGoals?: SavingsGoal[];
+  budgetConfig?: BudgetConfig;
 }
 
 export const buildJsonBackup = (data: Omit<BackupSnapshot, 'app' | 'version'>): string =>
-  JSON.stringify({ app: 'LigdiBe', version: 1, ...data } satisfies BackupSnapshot, null, 2);
+  JSON.stringify({ app: 'LigdiBe', version: 2, ...data } satisfies BackupSnapshot, null, 2);
+
+const isArray = (v: unknown): v is unknown[] => Array.isArray(v);
+
+/** Valide une sauvegarde JSON (fichier choisi par l'utilisateur : jamais digne de confiance). */
+export const parseJsonBackup = (json: string): BackupSnapshot => {
+  let data: Partial<BackupSnapshot>;
+  try {
+    data = JSON.parse(json);
+  } catch {
+    throw new Error('Fichier illisible : ce n’est pas une sauvegarde JSON.');
+  }
+  if (!data || data.app !== 'LigdiBe' || (data.version !== 1 && data.version !== 2)) {
+    throw new Error('Ce fichier n’est pas une sauvegarde LigdiBe.');
+  }
+  if (!isArray(data.accounts) || !isArray(data.transactions) || !isArray(data.debts) || !isArray(data.plannedItems)) {
+    throw new Error('Sauvegarde incomplète ou corrompue.');
+  }
+  const validTx = data.transactions.every(
+    t =>
+      typeof t?.id === 'string' &&
+      typeof t.amount === 'number' &&
+      typeof t.type === 'string' &&
+      typeof t.occurredAt === 'string',
+  );
+  if (!validTx) {
+    throw new Error('Sauvegarde corrompue : transactions invalides.');
+  }
+  return data as BackupSnapshot;
+};

@@ -1,6 +1,6 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 import RNFS from 'react-native-fs';
-import { fileTimestamp, toLocalIso } from '../../core/dates';
+import { fileTimestamp, nextMonthKey, toLocalIso } from '../../core/dates';
 import type { Repositories } from '../../domain/repositories';
 import { buildJsonBackup, transactionsToCsv } from '../exportBuilders';
 
@@ -44,15 +44,28 @@ export const exportTransactionsCsv = async (repos: Repositories, now = new Date(
   return { path, count: transactions.length };
 };
 
-/** Sauvegarde complète JSON (comptes, transactions, dettes, prévisionnel du mois). */
+/** Sauvegarde complète JSON (comptes, transactions, dettes, prévisionnel, tontines, objectifs, budget). */
 export const exportJsonBackup = async (repos: Repositories, month: string, now = new Date()): Promise<ExportResult> => {
-  const [accounts, transactions, debts, plannedItems] = await Promise.all([
+  const [accounts, transactions, debts, current, next, tontines, savingsGoals, budgetConfig] = await Promise.all([
     repos.accounts.getAll(),
     repos.transactions.listAll(),
     repos.debts.getAll(),
     repos.plannedItems.listByMonth(month),
+    repos.plannedItems.listByMonth(nextMonthKey(month)),
+    repos.tontines.getAll(),
+    repos.savingsGoals.getAll(),
+    repos.settings.getBudgetConfig(),
   ]);
-  const json = buildJsonBackup({ exportedAt: toLocalIso(now), accounts, transactions, debts, plannedItems });
+  const json = buildJsonBackup({
+    exportedAt: toLocalIso(now),
+    accounts,
+    transactions,
+    debts,
+    plannedItems: [...current, ...next],
+    tontines,
+    savingsGoals,
+    budgetConfig,
+  });
   const path = await writeWithFallback(`LigdiBe_sauvegarde_${fileTimestamp(now)}.json`, json);
   return { path, count: transactions.length };
 };

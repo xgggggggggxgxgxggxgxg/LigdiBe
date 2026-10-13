@@ -39,7 +39,7 @@ export const createInMemoryRepositories = (): Repositories & {
   return {
     store,
     transactions: {
-      insertMany: async txs => void store.transactions.push(...txs),
+      insertMany: async txs => txs.forEach(t => upsert(store.transactions, t)),
       existsByReference: async (p, r) => store.transactions.some(t => t.provider === p && t.reference === r),
       existsBySmsFingerprint: async fp => store.transactions.some(t => t.smsFingerprint === fp),
       listBetween: async (a, b) => store.transactions.filter(t => t.occurredAt >= a && t.occurredAt < b),

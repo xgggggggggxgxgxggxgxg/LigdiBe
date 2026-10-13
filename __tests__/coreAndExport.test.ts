@@ -67,7 +67,7 @@ describe('export', () => {
     const json = JSON.parse(
       buildJsonBackup({ exportedAt: 'x', accounts: [], transactions: [tx({})], debts: [], plannedItems: [] }),
     );
-    expect(json).toMatchObject({ app: 'LigdiBe', version: 1, exportedAt: 'x' });
+    expect(json).toMatchObject({ app: 'LigdiBe', version: 2, exportedAt: 'x' });
     expect(json.transactions).toHaveLength(1);
   });
 });

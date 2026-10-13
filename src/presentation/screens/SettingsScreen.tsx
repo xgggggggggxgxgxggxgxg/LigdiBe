@@ -11,6 +11,7 @@ import { ensureNotificationChannels, scheduleDailyReminders } from '../../servic
 import { isValidPin, removePin, setPin } from '../../services/security/AppLock';
 import { hasSmsPermissions, isSmsSupported, requestSmsPermissions } from '../../services/sms/SmsBridge';
 import { importSmsBacklog } from '../../services/sms/smsIngestion';
+import { listBackupFiles, restoreBackupFile, type BackupFile } from '../../services/export/BackupService';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { CATEGORIES } from '../../core/categories';
@@ -52,6 +53,7 @@ export const SettingsScreen = () => {
   const [newPin, setNewPin] = useState('');
   const [limitCategory, setLimitCategory] = useState<string>(CATEGORIES.FOOD);
   const [limitAmount, setLimitAmount] = useState('');
+  const [backups, setBackups] = useState<BackupFile[] | undefined>();
 
   useEffect(() => {
     hasSmsPermissions()
@@ -347,6 +349,57 @@ export const SettingsScreen = () => {
               </Text>
             )}
           </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title
+            title="Restaurer une sauvegarde"
+            subtitle="Nouveau téléphone ? Copie ton fichier LigdiBe_sauvegarde_….json dans Téléchargements"
+          />
+          <Card.Actions>
+            <Button
+              icon="folder-search-outline"
+              onPress={async () => {
+                const files = await listBackupFiles();
+                setBackups(files);
+                if (files.length === 0) {
+                  Alert.alert(
+                    'Aucune sauvegarde trouvée',
+                    'Exporte une sauvegarde JSON depuis l’onglet Stats de ton ancien téléphone.',
+                  );
+                }
+              }}>
+              Chercher
+            </Button>
+          </Card.Actions>
+          {backups?.map(f => (
+            <List.Item
+              key={f.path}
+              title={f.name.replace('LigdiBe_sauvegarde_', '').replace('.json', '')}
+              description={`${Math.round(f.size / 1024)} Ko`}
+              left={p => <List.Icon {...p} icon="backup-restore" />}
+              onPress={() =>
+                Alert.alert('Restaurer cette sauvegarde ?', 'Les données seront fusionnées avec celles du téléphone.', [
+                  { text: 'Annuler', style: 'cancel' },
+                  {
+                    text: 'Restaurer',
+                    onPress: async () => {
+                      try {
+                        const report = await restoreBackupFile(await getRepositories(), f.path);
+                        await hydrate();
+                        Alert.alert(
+                          'Restauration réussie ✅',
+                          `${report.transactions} opérations, ${report.debts} dettes récupérées.`,
+                        );
+                      } catch (e) {
+                        Alert.alert('Restauration impossible', e instanceof Error ? e.message : String(e));
+                      }
+                    },
+                  },
+                ])
+              }
+            />
+          ))}
         </Card>
 
         <Card style={styles.card}>
