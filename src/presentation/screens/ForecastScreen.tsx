@@ -22,6 +22,7 @@ import { formatMonthLabel, monthKey } from '../../core/dates';
 import type { PlannedItem, PlannedKind } from '../../domain/models/PlannedItem';
 import { suggestMatches, summarizeForecast } from '../../domain/usecases/BudgetForecast';
 import { categoryEnvelopes } from '../../domain/usecases/CategoryBudgets';
+import { detectRecurring } from '../../domain/usecases/RecurringDetection';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { StatTile } from '../components/StatTile';
@@ -172,6 +173,11 @@ export const ForecastScreen = () => {
   const monthTxs = useMemo(() => transactions.filter(t => t.occurredAt.startsWith(month)), [transactions, month]);
   const summary = useMemo(() => summarizeForecast(plannedItems, monthTxs), [plannedItems, monthTxs]);
   const envelopes = useMemo(() => categoryEnvelopes(config, monthTxs), [config, monthTxs]);
+  const savePlannedItem = useFinanceStore(s => s.savePlannedItem);
+  const suggestions = useMemo(
+    () => detectRecurring(transactions, plannedItems).slice(0, 5),
+    [transactions, plannedItems],
+  );
   const sections: Array<[string, PlannedItem[]]> = [
     ['Gains prévus', plannedItems.filter(i => i.kind === 'INCOME')],
     ['Dépenses prévues', plannedItems.filter(i => i.kind === 'EXPENSE')],
@@ -241,6 +247,40 @@ export const ForecastScreen = () => {
             ))}
           </Card>
         ))}
+
+        {suggestions.length > 0 && (
+          <Card style={styles.card} testID="recurring-suggestions">
+            <Card.Title
+              title="Opérations qui reviennent chaque mois"
+              subtitle="Détectées dans tes SMS : ajoute-les en un tap"
+            />
+            {suggestions.map(sug => (
+              <List.Item
+                key={sug.key}
+                title={sug.label}
+                description={`${sug.kind === 'INCOME' ? 'Gain' : 'Dépense'} ≈ ${formatFCFA(sug.amount)} · vue ${
+                  sug.monthsSeen
+                } mois`}
+                right={() => (
+                  <IconButton
+                    icon="plus-circle-outline"
+                    accessibilityLabel={`Ajouter ${sug.label}`}
+                    onPress={() =>
+                      savePlannedItem({
+                        label: sug.label,
+                        amount: sug.amount,
+                        kind: sug.kind,
+                        category: sug.category,
+                        keywords: sug.keywords,
+                        recurring: true,
+                      })
+                    }
+                  />
+                )}
+              />
+            ))}
+          </Card>
+        )}
 
         {envelopes.length > 0 && (
           <Card style={styles.card} testID="envelopes-card">

@@ -316,6 +316,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       };
       await r.plannedItems.saveMany([item]);
       set({ plannedItems: await r.plannedItems.listByMonth(monthKey(get().now)) });
+      // Une ligne ajoutée après coup est aussitôt cochée si l'opération du mois existe déjà.
+      await get().autoCheckPlannedItems();
     },
 
     async togglePlannedItem(itemId, matchedTransactionId) {
