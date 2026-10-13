@@ -12,6 +12,8 @@ import { isValidPin, removePin, setPin } from '../../services/security/AppLock';
 import { hasSmsPermissions, isSmsSupported, requestSmsPermissions } from '../../services/sms/SmsBridge';
 import { importSmsBacklog } from '../../services/sms/smsIngestion';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
+import { CategoryPicker } from '../components/CategoryPicker';
+import { CATEGORIES } from '../../core/categories';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useLockStore } from '../store/useLockStore';
 import { palette } from '../theme/theme';
@@ -48,6 +50,8 @@ export const SettingsScreen = () => {
   const pinEnabled = useLockStore(s => s.pinEnabled);
   const setPinEnabled = useLockStore(s => s.setPinEnabled);
   const [newPin, setNewPin] = useState('');
+  const [limitCategory, setLimitCategory] = useState<string>(CATEGORIES.FOOD);
+  const [limitAmount, setLimitAmount] = useState('');
 
   useEffect(() => {
     hasSmsPermissions()
@@ -183,6 +187,42 @@ export const SettingsScreen = () => {
                 setFixedDay('');
               }}>
               Ajouter la charge
+            </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="Enveloppes par catégorie" subtitle="Alerte à 80 % et en cas de dépassement" />
+          {Object.entries(config.categoryLimits).map(([category, limit]) => (
+            <List.Item
+              key={category}
+              title={category}
+              description={`${formatFCFA(limit)} / mois`}
+              right={() => (
+                <IconButton
+                  icon="delete-outline"
+                  onPress={() => {
+                    const rest = { ...config.categoryLimits };
+                    delete rest[category];
+                    return update({ categoryLimits: rest });
+                  }}
+                />
+              )}
+            />
+          ))}
+          <Card.Content>
+            <CategoryPicker value={limitCategory} onChange={setLimitCategory} />
+            <AmountInput label={`Plafond « ${limitCategory} »`} value={limitAmount} onChangeText={setLimitAmount} />
+            <Button
+              icon="plus"
+              disabled={parseInputAmount(limitAmount) <= 0}
+              onPress={async () => {
+                await update({
+                  categoryLimits: { ...config.categoryLimits, [limitCategory]: parseInputAmount(limitAmount) },
+                });
+                setLimitAmount('');
+              }}>
+              Définir l'enveloppe
             </Button>
           </Card.Content>
         </Card>

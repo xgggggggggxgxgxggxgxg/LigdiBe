@@ -24,6 +24,8 @@ export interface BudgetConfig {
   monthlyAirtimeLimit: number;
   /** Plafond d'alerte annuel global (0 = aucun). */
   yearlyBudget: number;
+  /** Enveloppes mensuelles par catégorie (ex: { Repas: 30000 }). */
+  categoryLimits: Record<string, number>;
 }
 
 export const DEFAULT_BUDGET_CONFIG: BudgetConfig = {
@@ -33,4 +35,5 @@ export const DEFAULT_BUDGET_CONFIG: BudgetConfig = {
   specialDays: [],
   monthlyAirtimeLimit: 5000,
   yearlyBudget: 0,
+  categoryLimits: {},
 };

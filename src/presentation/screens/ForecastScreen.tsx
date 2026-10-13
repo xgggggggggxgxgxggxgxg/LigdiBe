@@ -11,6 +11,7 @@ import {
   List,
   Modal,
   Portal,
+  ProgressBar,
   SegmentedButtons,
   Switch,
   Text,
@@ -22,6 +23,7 @@ import { formatFCFA } from '../../core/currency';
 import { formatMonthLabel, monthKey } from '../../core/dates';
 import type { PlannedItem, PlannedKind } from '../../domain/models/PlannedItem';
 import { suggestMatches, summarizeForecast } from '../../domain/usecases/BudgetForecast';
+import { categoryEnvelopes } from '../../domain/usecases/CategoryBudgets';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { StatTile } from '../components/StatTile';
@@ -182,6 +184,7 @@ export const ForecastScreen = () => {
   const month = monthKey(now);
   const monthTxs = useMemo(() => transactions.filter(t => t.occurredAt.startsWith(month)), [transactions, month]);
   const summary = useMemo(() => summarizeForecast(plannedItems, monthTxs), [plannedItems, monthTxs]);
+  const envelopes = useMemo(() => categoryEnvelopes(config, monthTxs), [config, monthTxs]);
   const sections: Array<[string, PlannedItem[]]> = [
     ['Gains prévus', plannedItems.filter(i => i.kind === 'INCOME')],
     ['Dépenses prévues', plannedItems.filter(i => i.kind === 'EXPENSE')],
@@ -252,6 +255,31 @@ export const ForecastScreen = () => {
           </Card>
         ))}
 
+        {envelopes.length > 0 && (
+          <Card style={styles.card} testID="envelopes-card">
+            <Card.Title title="Enveloppes par catégorie" subtitle="Plafonds mensuels (Réglages)" />
+            <Card.Content>
+              {envelopes.map(e => (
+                <View key={e.category} style={styles.envelope}>
+                  <View style={styles.rowBetween}>
+                    <Text>{e.category}</Text>
+                    <Text style={e.status === 'EXCEEDED' ? styles.over : undefined}>
+                      {formatFCFA(e.spent, { withUnit: false })} / {formatFCFA(e.limit)}
+                    </Text>
+                  </View>
+                  <ProgressBar
+                    progress={Math.min(1, e.ratio)}
+                    color={
+                      e.status === 'EXCEEDED' ? palette.red : e.status === 'WARNING' ? palette.orange : palette.green
+                    }
+                    style={styles.bar}
+                  />
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
+
         {config.fixedExpenses.length > 0 && (
           <Card style={styles.card}>
             <Card.Title title="Charges fixes du mois" subtitle="Coche quand c'est payé" />
@@ -319,5 +347,8 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   modal: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 20, maxHeight: '85%' },
   input: { marginVertical: 6 },
+  envelope: { marginBottom: 10 },
+  over: { color: palette.red, fontWeight: '700' },
+  bar: { height: 8, borderRadius: 4, marginTop: 4 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
 });

@@ -16,6 +16,7 @@ import type { Repositories } from '../../domain/repositories';
 import { summarizeAirtime } from '../../domain/usecases/AirtimeTracker';
 import { calculateDailyBudget } from '../../domain/usecases/CalculateDailyBudget';
 import { counterpartyKey } from '../../domain/usecases/CategorizeTransaction';
+import { envelopeThresholdCrossed } from '../../domain/usecases/CategoryBudgets';
 import { applyRepayment, debtRemaining, findDebtForTransaction } from '../../domain/usecases/ManageDebts';
 import { LEARNED_CATEGORIES_KEY } from '../../domain/usecases/ProcessIncomingSms';
 
@@ -198,6 +199,22 @@ export const notifyAfterRecording = async (
         )}. Un forfait mensuel serait peut-être moins cher.`,
       );
     }
+  }
+
+  const crossed = envelopeThresholdCrossed(
+    config,
+    transactions.filter(t => t.occurredAt.startsWith(month)),
+    main,
+  );
+  if (crossed) {
+    const { envelope, threshold } = crossed;
+    await notifyAlert(
+      `envelope-${envelope.category}`,
+      threshold === 1
+        ? `🚨 Enveloppe « ${envelope.category} » dépassée`
+        : `⚠️ Enveloppe « ${envelope.category} » à 80 %`,
+      `${formatFCFA(envelope.spent)} dépensés sur ${formatFCFA(envelope.limit)} ce mois-ci.`,
+    );
   }
 
   if (recorded.some(isSpending)) {

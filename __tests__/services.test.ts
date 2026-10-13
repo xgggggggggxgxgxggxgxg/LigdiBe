@@ -186,3 +186,18 @@ describe('Export', () => {
     (RNFS.writeFile as jest.Mock).mockReset();
   });
 });
+
+describe('Alerte enveloppe catégorie', () => {
+  test('notifie au franchissement de 80 %', async () => {
+    const repos = createInMemoryRepositories();
+    await repos.settings.saveBudgetConfig({ ...DEFAULT_BUDGET_CONFIG, categoryLimits: { [CATEGORIES.FOOD]: 10000 } });
+    const a = tx({ amount: 5000, category: CATEGORIES.FOOD, occurredAt: '2026-10-12T09:00:00' });
+    const b = tx({ amount: 3500, category: CATEGORIES.FOOD, occurredAt: '2026-10-13T09:00:00' });
+    await repos.transactions.insertMany([a, b]);
+    await notifyAfterRecording(repos, [b], NOW);
+    const alert = (notifee.displayNotification as jest.Mock).mock.calls.find(
+      c => c[0].id === `envelope-${CATEGORIES.FOOD}`,
+    );
+    expect(alert?.[0].title).toContain('80 %');
+  });
+});
