@@ -6,6 +6,7 @@ import { formatFCFA } from '../../core/currency';
 import type { Transaction } from '../../domain/models/Transaction';
 import { AddTransactionModal } from '../components/AddTransactionModal';
 import { BalanceCard } from '../components/BalanceCard';
+import { ChallengeCard } from '../components/ChallengeCard';
 import { DailyBudgetCard } from '../components/DailyBudgetCard';
 import { StatTile } from '../components/StatTile';
 import { TransactionDetailModal } from '../components/TransactionDetailModal';
@@ -94,6 +95,7 @@ export const DashboardScreen = () => {
         ))}
       </ScrollView>
       <DailyBudgetCard budget={budget} streak={budget.streak} />
+      <ChallengeCard />
       <View style={styles.tiles}>
         <StatTile
           testID="airtime-tile"

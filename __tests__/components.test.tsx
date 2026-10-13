@@ -93,6 +93,9 @@ describe('DashboardScreen', () => {
     expect(screen.getByTestId('balance-cash-wallet')).toBeTruthy();
     expect(screen.getByText('INTOUCH BURKINA')).toBeTruthy();
     expect(screen.getByTestId('airtime-tile')).toHaveTextContent(/200 FCFA/);
+    expect(screen.getByTestId('challenge-card')).toHaveTextContent(/Défi de la semaine/);
+    fireEvent.press(screen.getByText('Tout voir'));
+    expect(screen.getByTestId('badge-streak-30')).toBeTruthy();
 
     fireEvent.press(screen.getByTestId('filter-INCOME'));
     await waitFor(() => expect(screen.queryByText('INTOUCH BURKINA')).toBeNull());
