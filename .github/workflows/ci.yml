@@ -6,6 +6,11 @@ on:
     tags: ['v*']
   pull_request:
 
+# Un nouveau push annule la validation devenue obsolète sur la même branche.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
