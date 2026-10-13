@@ -345,7 +345,7 @@ export const parseTransactionSms = (rawSms: string, options: ParseOptions = {}):
     const tax = draft.tax ?? 0;
     const isDebit = draft.type !== 'INCOME';
     const total = draft.total ?? round(isDebit ? draft.amount + fee + tax : draft.amount);
-    return stripUndefined({
+    return stripUndefined<ParsedSms>({
       ...draft,
       provider,
       fee,

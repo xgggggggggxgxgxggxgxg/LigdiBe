@@ -1,6 +1,32 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- INTERNET n'est utilisé que par le serveur Metro en développement. L'application ne fait aucun appel réseau. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <uses-permission android:name="android.permission.READ_SMS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Export CSV dans « Téléchargements » sur Android ≤ 9. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
+
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
+
+    <!-- Ouverture de WhatsApp / application SMS pour les relances de dettes (Android 11+). -->
+    <queries>
+      <package android:name="com.whatsapp" />
+      <package android:name="com.whatsapp.w4b" />
+      <intent>
+        <action android:name="android.intent.action.SENDTO" />
+        <data android:scheme="sms" />
+      </intent>
+      <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <data android:scheme="https" />
+      </intent>
+    </queries>
 
     <application
       android:name=".MainApplication"
@@ -8,7 +34,23 @@
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
       android:allowBackup="false"
+      android:requestLegacyExternalStorage="true"
       android:theme="@style/AppTheme">
+
+      <!-- Écoute des SMS opérateurs (Moov, Orange, Wave, UBA…), même application fermée. -->
+      <receiver
+        android:name=".sms.SmsReceiver"
+        android:exported="true"
+        android:permission="android.permission.BROADCAST_SMS">
+        <intent-filter android:priority="999">
+          <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+        </intent-filter>
+      </receiver>
+
+      <service
+        android:name=".sms.SmsHeadlessTaskService"
+        android:exported="false" />
+
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

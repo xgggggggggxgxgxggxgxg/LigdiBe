@@ -1,118 +1,59 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import notifee from '@notifee/react-native';
+import React, { useEffect } from 'react';
+import { AppState, StatusBar } from 'react-native';
+import { PaperProvider } from 'react-native-paper';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getRepositories } from './src/data/repositories';
+import { RootNavigator } from './src/presentation/navigation/RootNavigator';
+import { useFinanceStore } from './src/presentation/store/useFinanceStore';
+import { theme } from './src/presentation/theme/theme';
+import { handleNotificationEvent, scheduleDailyReminders } from './src/services/notifications/NotificationService';
+import { importSmsBacklog } from './src/services/sms/smsIngestion';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const DAY_MS = 24 * 3600 * 1000;
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+/** Au retour au premier plan : rattrape les SMS manqués, recharge, reprogramme les rappels. */
+const syncOnForeground = async () => {
+  const store = useFinanceStore.getState();
+  try {
+    if (store.onboarded) {
+      await importSmsBacklog(await getRepositories(), Date.now() - 2 * DAY_MS);
+    }
+  } catch {
+    // Permission SMS absente : l'application reste utilisable en saisie manuelle.
+  }
+  await store.hydrate();
+  const s = useFinanceStore.getState();
+  if (s.onboarded) {
+    await scheduleDailyReminders(s.budgetConfig, s.transactions, new Date(), s.paidFixedExpenseIds).catch(() => undefined);
+  }
+};
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
+  useEffect(() => {
+    syncOnForeground();
+    const sub = AppState.addEventListener('change', state => {
+      if (state === 'active') {
+        syncOnForeground();
+      }
+    });
+    const unsubscribe = notifee.onForegroundEvent(async event => {
+      await handleNotificationEvent(event, await getRepositories(), () => useFinanceStore.getState().hydrate());
+    });
+    return () => {
+      sub.remove();
+      unsubscribe();
+    };
+  }, []);
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <PaperProvider theme={theme}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        <RootNavigator />
+      </PaperProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-});
 
 export default App;
