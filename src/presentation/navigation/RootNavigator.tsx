@@ -5,11 +5,13 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { DebtsScreen } from '../screens/DebtsScreen';
+import { LockScreen } from '../screens/LockScreen';
 import { ForecastScreen } from '../screens/ForecastScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { StatsScreen } from '../screens/StatsScreen';
 import { useFinanceStore } from '../store/useFinanceStore';
+import { useLockStore } from '../store/useLockStore';
 import { palette } from '../theme/theme';
 
 export type RootTabParamList = {
@@ -34,6 +36,7 @@ export const RootNavigator = () => {
   const ready = useFinanceStore(s => s.ready);
   const onboarded = useFinanceStore(s => s.onboarded);
   const error = useFinanceStore(s => s.error);
+  const locked = useLockStore(s => s.locked);
 
   if (!ready) {
     return (
@@ -41,6 +44,9 @@ export const RootNavigator = () => {
         <ActivityIndicator color={palette.green} size="large" />
       </View>
     );
+  }
+  if (locked) {
+    return <LockScreen />;
   }
   if (error) {
     return (

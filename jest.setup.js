@@ -11,6 +11,7 @@ jest.mock('react-native-keychain', () => ({
   ACCESSIBLE: { AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY' },
   getGenericPassword: jest.fn(async () => false),
   setGenericPassword: jest.fn(async () => true),
+  resetGenericPassword: jest.fn(async () => true),
 }));
 
 jest.mock('react-native-get-random-values', () => ({}));

@@ -8,10 +8,12 @@ import { getRepositories } from '../../data/repositories';
 import { parseTransactionSms, type ParsedSms } from '../../data/parser/SmsParserEngine';
 import type { BudgetConfig } from '../../domain/models/Budget';
 import { ensureNotificationChannels, scheduleDailyReminders } from '../../services/notifications/NotificationService';
+import { isValidPin, removePin, setPin } from '../../services/security/AppLock';
 import { hasSmsPermissions, isSmsSupported, requestSmsPermissions } from '../../services/sms/SmsBridge';
 import { importSmsBacklog } from '../../services/sms/smsIngestion';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { useFinanceStore } from '../store/useFinanceStore';
+import { useLockStore } from '../store/useLockStore';
 import { palette } from '../theme/theme';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -43,6 +45,9 @@ export const SettingsScreen = () => {
   const [importing, setImporting] = useState(false);
   const [testSms, setTestSms] = useState('');
   const [testResult, setTestResult] = useState<ParsedSms | null | undefined>();
+  const pinEnabled = useLockStore(s => s.pinEnabled);
+  const setPinEnabled = useLockStore(s => s.setPinEnabled);
+  const [newPin, setNewPin] = useState('');
 
   useEffect(() => {
     hasSmsPermissions()
@@ -302,6 +307,50 @@ export const SettingsScreen = () => {
               </Text>
             )}
           </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title
+            title="Verrouillage par code"
+            subtitle={pinEnabled ? 'Activé 🔒 (après 1 min en arrière-plan)' : 'Désactivé'}
+          />
+          <Card.Content>
+            <TextInput
+              mode="outlined"
+              dense
+              label={pinEnabled ? 'Nouveau code (4 à 6 chiffres)' : 'Code (4 à 6 chiffres)'}
+              value={newPin}
+              onChangeText={v => setNewPin(v.replace(/\D/g, '').slice(0, 6))}
+              keyboardType="number-pad"
+              secureTextEntry
+              style={styles.input}
+            />
+          </Card.Content>
+          <Card.Actions>
+            {pinEnabled && (
+              <Button
+                onPress={async () => {
+                  await removePin();
+                  setPinEnabled(false);
+                }}>
+                Désactiver
+              </Button>
+            )}
+            <Button
+              mode="contained-tonal"
+              disabled={!isValidPin(newPin)}
+              onPress={async () => {
+                await setPin(newPin);
+                setNewPin('');
+                setPinEnabled(true);
+                Alert.alert(
+                  'Code enregistré 🔒',
+                  'Ne l’oublie pas : il n’existe aucun moyen de le récupérer en ligne.',
+                );
+              }}>
+              {pinEnabled ? 'Changer le code' : 'Activer'}
+            </Button>
+          </Card.Actions>
         </Card>
 
         <Card style={styles.card}>

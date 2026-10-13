@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getRepositories } from './src/data/repositories';
 import { RootNavigator } from './src/presentation/navigation/RootNavigator';
 import { useFinanceStore } from './src/presentation/store/useFinanceStore';
+import { useLockStore } from './src/presentation/store/useLockStore';
 import { theme } from './src/presentation/theme/theme';
 import { handleNotificationEvent, scheduleDailyReminders } from './src/services/notifications/NotificationService';
 import { importSmsBacklog } from './src/services/sms/smsIngestion';
@@ -33,10 +34,14 @@ const syncOnForeground = async () => {
 
 function App(): React.JSX.Element {
   useEffect(() => {
+    useLockStore.getState().init();
     syncOnForeground();
     const sub = AppState.addEventListener('change', state => {
       if (state === 'active') {
+        useLockStore.getState().onForeground();
         syncOnForeground();
+      } else if (state === 'background') {
+        useLockStore.getState().onBackground();
       }
     });
     const unsubscribe = notifee.onForegroundEvent(async event => {
