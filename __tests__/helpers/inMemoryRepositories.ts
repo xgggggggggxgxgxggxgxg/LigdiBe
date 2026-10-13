@@ -3,6 +3,7 @@ import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../src/domain/model
 import type { Account } from '../../src/domain/models/Account';
 import type { Debt } from '../../src/domain/models/Debt';
 import type { PlannedItem } from '../../src/domain/models/PlannedItem';
+import type { SavingsGoal } from '../../src/domain/models/SavingsGoal';
 import type { Tontine } from '../../src/domain/models/Tontine';
 import type { Transaction } from '../../src/domain/models/Transaction';
 import type { Repositories } from '../../src/domain/repositories';
@@ -14,6 +15,7 @@ export const createInMemoryRepositories = (): Repositories & {
     debts: Debt[];
     planned: PlannedItem[];
     tontines: Tontine[];
+    goals: SavingsGoal[];
     kv: Record<string, unknown>;
   };
 } => {
@@ -23,6 +25,7 @@ export const createInMemoryRepositories = (): Repositories & {
     debts: [] as Debt[],
     planned: [] as PlannedItem[],
     tontines: [] as Tontine[],
+    goals: [] as SavingsGoal[],
     kv: {} as Record<string, unknown>,
   };
   const upsert = <T extends { id: string }>(arr: T[], item: T) => {
@@ -69,6 +72,11 @@ export const createInMemoryRepositories = (): Repositories & {
       getAll: async () => [...store.tontines],
       save: async t => upsert(store.tontines, t),
       delete: async id => void (store.tontines = store.tontines.filter(t => t.id !== id)),
+    },
+    savingsGoals: {
+      getAll: async () => [...store.goals],
+      save: async g => upsert(store.goals, g),
+      delete: async id => void (store.goals = store.goals.filter(g => g.id !== id)),
     },
     settings: {
       getBudgetConfig: async () => (store.kv.budget as BudgetConfig) ?? DEFAULT_BUDGET_CONFIG,

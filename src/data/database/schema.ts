@@ -79,6 +79,18 @@ export const MIGRATIONS: ReadonlyArray<ReadonlyArray<string>> = [
       value TEXT NOT NULL
     )`,
   ],
+  // v2 — objectifs d'épargne
+  [
+    `CREATE TABLE IF NOT EXISTS savings_goals (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      target_amount REAL NOT NULL,
+      deadline TEXT,
+      contributions TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL
+    )`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

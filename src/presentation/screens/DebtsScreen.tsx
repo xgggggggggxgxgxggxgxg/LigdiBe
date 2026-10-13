@@ -26,11 +26,12 @@ import {
 } from '../../domain/usecases/ManageDebts';
 import { tontineStatus } from '../../domain/usecases/TontineTracker';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
+import { AddGoalModal, GoalsList } from '../components/GoalsSection';
 import { StatTile } from '../components/StatTile';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
 
-type Tab = DebtDirection | 'TONTINE';
+type Tab = DebtDirection | 'TONTINE' | 'GOALS';
 
 const openUrl = async (url: string, fallback?: string) => {
   try {
@@ -311,7 +312,7 @@ export const DebtsScreen = () => {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <Text variant="headlineSmall" style={styles.title}>
-        Carnet informel
+        Carnet & Épargne
       </Text>
       <View style={styles.tiles}>
         <StatTile icon="hand-coin" label="On me doit" value={formatFCFA(summary.owedToMe)} color={palette.green} />
@@ -322,12 +323,15 @@ export const DebtsScreen = () => {
         onValueChange={v => setTab(v as Tab)}
         style={styles.segment}
         buttons={[
-          { value: 'OWED_TO_ME', label: 'On me doit' },
+          { value: 'OWED_TO_ME', label: 'Me doit' },
           { value: 'OWED_BY_ME', label: 'Je dois' },
           { value: 'TONTINE', label: 'Tontines' },
+          { value: 'GOALS', label: 'Épargne' },
         ]}
       />
-      {tab === 'TONTINE' ? (
+      {tab === 'GOALS' ? (
+        <GoalsList />
+      ) : tab === 'TONTINE' ? (
         <FlatList
           data={tontines}
           keyExtractor={t => t.id}
@@ -351,7 +355,9 @@ export const DebtsScreen = () => {
         />
       )}
       <FAB icon="plus" style={styles.fab} onPress={() => setAdding(true)} testID="fab-debt" />
-      {tab === 'TONTINE' ? (
+      {tab === 'GOALS' ? (
+        <AddGoalModal visible={adding} onDismiss={() => setAdding(false)} />
+      ) : tab === 'TONTINE' ? (
         <AddTontineModal visible={adding} onDismiss={() => setAdding(false)} />
       ) : (
         <AddDebtModal visible={adding} direction={tab} onDismiss={() => setAdding(false)} />

@@ -6,6 +6,7 @@ import { CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../../domain/mo
 import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../domain/models/Budget';
 import type { Debt } from '../../domain/models/Debt';
 import type { PlannedItem } from '../../domain/models/PlannedItem';
+import type { SavingsGoal } from '../../domain/models/SavingsGoal';
 import type { Tontine } from '../../domain/models/Tontine';
 import type { Transaction, TransactionType } from '../../domain/models/Transaction';
 import type { Repositories } from '../../domain/repositories';
@@ -45,6 +46,7 @@ export interface FinanceState {
   debts: Debt[];
   plannedItems: PlannedItem[];
   tontines: Tontine[];
+  savingsGoals: SavingsGoal[];
   budgetConfig: BudgetConfig;
   paidFixedExpenseIds: string[];
   learnedCategories: Record<string, string>;
@@ -75,6 +77,10 @@ export interface FinanceState {
   saveTontine(tontine: Omit<Tontine, 'id' | 'paidContributions'> & Partial<Tontine>): Promise<void>;
   payTontine(tontineId: string): Promise<void>;
   deleteTontine(tontineId: string): Promise<void>;
+
+  saveGoal(goal: Omit<SavingsGoal, 'id' | 'contributions' | 'createdAt'> & Partial<SavingsGoal>): Promise<void>;
+  contributeToGoal(goalId: string, amount: number): Promise<void>;
+  deleteGoal(goalId: string): Promise<void>;
 
   completeOnboarding(userName: string, config: BudgetConfig): Promise<void>;
   setUserName(userName: string): Promise<void>;
@@ -119,6 +125,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     debts: [],
     plannedItems: [],
     tontines: [],
+    savingsGoals: [],
     budgetConfig: DEFAULT_BUDGET_CONFIG,
     paidFixedExpenseIds: [],
     learnedCategories: {},
@@ -142,6 +149,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           userName,
           onboarded,
           extraSenders,
+          savingsGoals,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -154,6 +162,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<string>(USER_NAME_KEY, ''),
           r.settings.getJson<boolean>(ONBOARDED_KEY, false),
           r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
+          r.savingsGoals.getAll(),
         ]);
         set({
           ready: true,
@@ -170,6 +179,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           userName,
           onboarded,
           extraSenders,
+          savingsGoals,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -391,6 +401,35 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.tontines.delete(tontineId);
       set(s => ({ tontines: s.tontines.filter(t => t.id !== tontineId) }));
+    },
+
+    async saveGoal(input) {
+      const r = await repos();
+      const goal: SavingsGoal = {
+        ...input,
+        id: input.id ?? generateId('goal'),
+        contributions: input.contributions ?? [],
+        createdAt: input.createdAt ?? toLocalIso(new Date()),
+      };
+      await r.savingsGoals.save(goal);
+      set({ savingsGoals: await r.savingsGoals.getAll() });
+    },
+
+    async contributeToGoal(goalId, amount) {
+      const r = await repos();
+      const goal = get().savingsGoals.find(g => g.id === goalId);
+      if (!goal || amount === 0) {
+        return;
+      }
+      const updated = { ...goal, contributions: [...goal.contributions, { date: toLocalIso(new Date()), amount }] };
+      await r.savingsGoals.save(updated);
+      set(s => ({ savingsGoals: s.savingsGoals.map(g => (g.id === goalId ? updated : g)) }));
+    },
+
+    async deleteGoal(goalId) {
+      const r = await repos();
+      await r.savingsGoals.delete(goalId);
+      set(s => ({ savingsGoals: s.savingsGoals.filter(g => g.id !== goalId) }));
     },
 
     async completeOnboarding(userName, config) {

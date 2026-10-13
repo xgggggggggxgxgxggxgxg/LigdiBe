@@ -87,6 +87,7 @@ describe('DashboardScreen', () => {
     configureFinanceStore(async () => repos);
     await useFinanceStore.getState().hydrate(now);
 
+    expect(useFinanceStore.getState().error).toBeUndefined();
     wrap(<DashboardScreen />);
     expect(screen.getByTestId('total-balance')).toHaveTextContent('10 891 FCFA');
     expect(screen.getByTestId('balance-cash-wallet')).toBeTruthy();

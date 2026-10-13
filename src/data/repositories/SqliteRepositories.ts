@@ -2,6 +2,7 @@ import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../domain/models/Bu
 import type { Account } from '../../domain/models/Account';
 import type { Debt } from '../../domain/models/Debt';
 import type { PlannedItem } from '../../domain/models/PlannedItem';
+import type { SavingsGoal } from '../../domain/models/SavingsGoal';
 import type { Tontine } from '../../domain/models/Tontine';
 import type { Transaction } from '../../domain/models/Transaction';
 import type {
@@ -9,6 +10,7 @@ import type {
   DebtRepository,
   PlannedItemRepository,
   Repositories,
+  SavingsGoalRepository,
   SettingsRepository,
   TontineRepository,
   TransactionRepository,
@@ -279,6 +281,36 @@ export class SqliteTontineRepository implements TontineRepository {
   }
 }
 
+// ---------------------------------------------------------------- Objectifs d'épargne
+export class SqliteSavingsGoalRepository implements SavingsGoalRepository {
+  constructor(private readonly db: SqlDatabase) {}
+
+  async getAll(): Promise<SavingsGoal[]> {
+    const rows = await this.db.execute('SELECT * FROM savings_goals ORDER BY created_at');
+    return rows.map(r => ({
+      id: r.id as string,
+      name: r.name as string,
+      emoji: r.emoji as string,
+      targetAmount: Number(r.target_amount),
+      deadline: opt<string>(r.deadline),
+      contributions: JSON.parse(r.contributions as string) as SavingsGoal['contributions'],
+      createdAt: r.created_at as string,
+    }));
+  }
+
+  async save(g: SavingsGoal): Promise<void> {
+    await this.db.execute(
+      `INSERT OR REPLACE INTO savings_goals (id, name, emoji, target_amount, deadline, contributions, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [g.id, g.name, g.emoji, g.targetAmount, nul(g.deadline), JSON.stringify(g.contributions), g.createdAt],
+    );
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.execute('DELETE FROM savings_goals WHERE id = ?', [id]);
+  }
+}
+
 // ---------------------------------------------------------------- Paramètres
 const BUDGET_KEY = 'budgetConfig';
 
@@ -310,6 +342,7 @@ export const createSqliteRepositories = (db: SqlDatabase): Repositories => ({
   debts: new SqliteDebtRepository(db),
   plannedItems: new SqlitePlannedItemRepository(db),
   tontines: new SqliteTontineRepository(db),
+  savingsGoals: new SqliteSavingsGoalRepository(db),
   settings: new SqliteSettingsRepository(db),
   ...withTransactions(db),
 });

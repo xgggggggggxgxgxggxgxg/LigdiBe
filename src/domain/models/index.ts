@@ -4,3 +4,4 @@ export * from './Debt';
 export * from './Budget';
 export * from './PlannedItem';
 export * from './Tontine';
+export * from './SavingsGoal';
