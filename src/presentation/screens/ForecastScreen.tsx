@@ -9,15 +9,13 @@ import {
   Divider,
   IconButton,
   List,
-  Modal,
-  Portal,
   ProgressBar,
   SegmentedButtons,
   Switch,
   Text,
 } from 'react-native-paper';
+import { AppModal, Screen } from '../components/Screen';
 import { Field } from '../components/Field';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORIES } from '../../core/categories';
 import { formatFCFA } from '../../core/currency';
 import { formatMonthLabel, monthKey } from '../../core/dates';
@@ -39,68 +37,66 @@ const AddPlannedModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
   const [category, setCategory] = useState<string>(CATEGORIES.BILLS);
   const [recurring, setRecurring] = useState(true);
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.bold}>
-            Ligne prévisionnelle
-          </Text>
-          <SegmentedButtons
-            value={kind}
-            onValueChange={v => setKind(v as PlannedKind)}
-            buttons={[
-              { value: 'EXPENSE', label: 'Dépense prévue' },
-              { value: 'INCOME', label: 'Gain prévu' },
-            ]}
-            style={styles.input}
-          />
-          <Field
-            mode="outlined"
-            label="Libellé (ex: Loyer, Salaire, Canal+)"
-            value={label}
-            onChangeText={setLabel}
-            style={styles.input}
-          />
-          <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
-          <Field
-            mode="outlined"
-            label="Mots-clés de détection (nom dans le SMS)"
-            placeholder="ex: KABORE, CANAL, SONABEL"
-            value={keywords}
-            onChangeText={setKeywords}
-            style={styles.input}
-          />
-          {kind === 'EXPENSE' && <CategoryPicker value={category} onChange={setCategory} />}
-          <View style={styles.rowBetween}>
-            <Text>Reconduire chaque mois</Text>
-            <Switch value={recurring} onValueChange={setRecurring} />
-          </View>
-          <Button
-            mode="contained"
-            disabled={!label.trim() || parseInputAmount(amount) <= 0}
-            onPress={async () => {
-              await savePlannedItem({
-                label: label.trim(),
-                amount: parseInputAmount(amount),
-                kind,
-                category: kind === 'INCOME' ? CATEGORIES.INCOME : category,
-                keywords: keywords
-                  .split(/[,;]/)
-                  .map(k => k.trim())
-                  .filter(Boolean),
-                recurring,
-              });
-              setLabel('');
-              setAmount('');
-              setKeywords('');
-              onDismiss();
-            }}
-            style={styles.input}>
-            Ajouter
-          </Button>
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible={visible} onDismiss={onDismiss}>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Text variant="titleLarge" style={styles.bold}>
+          Ligne prévisionnelle
+        </Text>
+        <SegmentedButtons
+          value={kind}
+          onValueChange={v => setKind(v as PlannedKind)}
+          buttons={[
+            { value: 'EXPENSE', label: 'Dépense prévue' },
+            { value: 'INCOME', label: 'Gain prévu' },
+          ]}
+          style={styles.input}
+        />
+        <Field
+          mode="outlined"
+          label="Libellé (ex: Loyer, Salaire, Canal+)"
+          value={label}
+          onChangeText={setLabel}
+          style={styles.input}
+        />
+        <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
+        <Field
+          mode="outlined"
+          label="Mots-clés de détection (nom dans le SMS)"
+          placeholder="ex: KABORE, CANAL, SONABEL"
+          value={keywords}
+          onChangeText={setKeywords}
+          style={styles.input}
+        />
+        {kind === 'EXPENSE' && <CategoryPicker value={category} onChange={setCategory} />}
+        <View style={styles.rowBetween}>
+          <Text>Reconduire chaque mois</Text>
+          <Switch value={recurring} onValueChange={setRecurring} />
+        </View>
+        <Button
+          mode="contained"
+          disabled={!label.trim() || parseInputAmount(amount) <= 0}
+          onPress={async () => {
+            await savePlannedItem({
+              label: label.trim(),
+              amount: parseInputAmount(amount),
+              kind,
+              category: kind === 'INCOME' ? CATEGORIES.INCOME : category,
+              keywords: keywords
+                .split(/[,;]/)
+                .map(k => k.trim())
+                .filter(Boolean),
+              recurring,
+            });
+            setLabel('');
+            setAmount('');
+            setKeywords('');
+            onDismiss();
+          }}
+          style={styles.input}>
+          Ajouter
+        </Button>
+      </ScrollView>
+    </AppModal>
   );
 };
 
@@ -135,36 +131,27 @@ const MatchModal = ({ item, onDismiss }: { item?: PlannedItem; onDismiss: () => 
     return null;
   }
   return (
-    <Portal>
-      <Modal visible onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <Text variant="titleMedium" style={styles.bold}>
-          Quelle opération correspond à « {item.label} » ?
-        </Text>
-        <Field
-          mode="outlined"
-          dense
-          label="Chercher un nom"
-          value={query}
-          onChangeText={setQuery}
-          style={styles.input}
-        />
-        <ScrollView>
-          {candidates.map(t => (
-            <List.Item
-              key={t.id}
-              title={t.counterpartyName ?? t.note ?? t.category}
-              description={`${t.occurredAt.slice(0, 10)} · ${formatFCFA(t.amount)}`}
-              left={p => <List.Icon {...p} icon="link-variant" />}
-              onPress={async () => {
-                await togglePlannedItem(item.id, t.id);
-                onDismiss();
-              }}
-            />
-          ))}
-          {candidates.length === 0 && <Text style={styles.empty}>Aucune opération trouvée ce mois-ci.</Text>}
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible onDismiss={onDismiss}>
+      <Text variant="titleMedium" style={styles.bold}>
+        Quelle opération correspond à « {item.label} » ?
+      </Text>
+      <Field mode="outlined" dense label="Chercher un nom" value={query} onChangeText={setQuery} style={styles.input} />
+      <ScrollView>
+        {candidates.map(t => (
+          <List.Item
+            key={t.id}
+            title={t.counterpartyName ?? t.note ?? t.category}
+            description={`${t.occurredAt.slice(0, 10)} · ${formatFCFA(t.amount)}`}
+            left={p => <List.Icon {...p} icon="link-variant" />}
+            onPress={async () => {
+              await togglePlannedItem(item.id, t.id);
+              onDismiss();
+            }}
+          />
+        ))}
+        {candidates.length === 0 && <Text style={styles.empty}>Aucune opération trouvée ce mois-ci.</Text>}
+      </ScrollView>
+    </AppModal>
   );
 };
 
@@ -191,7 +178,7 @@ export const ForecastScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <Text variant="headlineSmall" style={styles.bold}>
           Prévisionnel — {formatMonthLabel(month)}
@@ -330,22 +317,20 @@ export const ForecastScreen = () => {
       </ScrollView>
       <AddPlannedModal visible={adding} onDismiss={() => setAdding(false)} />
       <MatchModal item={matching} onDismiss={() => setMatching(undefined)} />
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
   content: { padding: 16, paddingBottom: 48 },
   bold: { fontWeight: '800' },
   banner: { marginVertical: 8 },
   tiles: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  card: { marginTop: 14, backgroundColor: '#fff' },
+  card: { marginTop: 14 },
   done: { textDecorationLine: 'line-through', opacity: 0.6 },
   empty: { textAlign: 'center', margin: 16, opacity: 0.6 },
   divider: { marginVertical: 16 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  modal: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 20, maxHeight: '85%' },
   input: { marginVertical: 6 },
   envelope: { marginBottom: 10 },
   over: { color: palette.red, fontWeight: '700' },

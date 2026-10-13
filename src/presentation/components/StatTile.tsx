@@ -29,7 +29,7 @@ export const StatTile = ({ icon, label, value, hint, color = '#0F7B5F', testID }
 );
 
 const styles = StyleSheet.create({
-  tile: { flex: 1, padding: 12, borderRadius: 14, backgroundColor: '#fff', minWidth: 100 },
+  tile: { flex: 1, padding: 12, borderRadius: 14, minWidth: 100 },
   label: { opacity: 0.7, marginTop: 4 },
   value: { fontWeight: '800', marginTop: 2 },
 });

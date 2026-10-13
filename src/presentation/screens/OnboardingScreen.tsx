@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { Button, Text } from 'react-native-paper';
+import { Screen } from '../components/Screen';
 import { Field } from '../components/Field';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { getRepositories } from '../../data/repositories';
 import { ensureNotificationChannels } from '../../services/notifications/NotificationService';
 import { requestSmsPermissions } from '../../services/sms/SmsBridge';
@@ -39,7 +39,7 @@ export const OnboardingScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.screen}>
+    <Screen edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text variant="displaySmall" style={styles.logo}>
           LigdiBe 💚
@@ -68,12 +68,11 @@ export const OnboardingScreen = () => {
           lus, jamais les codes secrets.
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 24 },
   logo: { color: palette.green, fontWeight: '900', marginTop: 24 },
   tagline: { marginVertical: 16 },

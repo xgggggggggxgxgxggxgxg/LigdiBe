@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Divider, IconButton, List, Text } from 'react-native-paper';
+import { Button, Card, Chip, Divider, IconButton, List, SegmentedButtons, Text } from 'react-native-paper';
+import { Screen } from '../components/Screen';
 import { Field } from '../components/Field';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
 import { generateId } from '../../core/id';
 import { getRepositories } from '../../data/repositories';
@@ -18,6 +18,7 @@ import { CategoryPicker } from '../components/CategoryPicker';
 import { CATEGORIES } from '../../core/categories';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useLockStore } from '../store/useLockStore';
+import type { ThemeMode } from '../theme/theme';
 import { palette } from '../theme/theme';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -49,6 +50,8 @@ export const SettingsScreen = () => {
   const [importing, setImporting] = useState(false);
   const [testSms, setTestSms] = useState('');
   const [testResult, setTestResult] = useState<ParsedSms | null | undefined>();
+  const themeMode = useFinanceStore(s => s.themeMode);
+  const setThemeMode = useFinanceStore(s => s.setThemeMode);
   const pinEnabled = useLockStore(s => s.pinEnabled);
   const setPinEnabled = useLockStore(s => s.setPinEnabled);
   const [newPin, setNewPin] = useState('');
@@ -99,7 +102,7 @@ export const SettingsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text variant="headlineSmall" style={styles.bold}>
           Réglages
@@ -123,6 +126,21 @@ export const SettingsScreen = () => {
             <Button mode="contained" onPress={saveBudget}>
               Enregistrer
             </Button>
+          </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title title="Apparence" />
+          <Card.Content>
+            <SegmentedButtons
+              value={themeMode}
+              onValueChange={v => setThemeMode(v as ThemeMode)}
+              buttons={[
+                { value: 'system', label: 'Auto', icon: 'theme-light-dark' },
+                { value: 'light', label: 'Clair', icon: 'white-balance-sunny' },
+                { value: 'dark', label: 'Sombre', icon: 'weather-night' },
+              ]}
+            />
           </Card.Content>
         </Card>
 
@@ -467,15 +485,14 @@ export const SettingsScreen = () => {
           LigdiBe · 100 % hors-ligne · données chiffrées (AES-256) sur ton téléphone
         </Text>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
   content: { padding: 16, paddingBottom: 48 },
   bold: { fontWeight: '800' },
-  card: { marginTop: 14, backgroundColor: '#fff' },
+  card: { marginTop: 14 },
   input: { marginVertical: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   flex1: { flex: 1 },

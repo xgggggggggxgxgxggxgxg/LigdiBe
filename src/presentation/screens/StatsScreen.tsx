@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Button, Card, IconButton, List, ProgressBar, Text } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import { formatMonthLabel, monthKey, nextMonthKey, previousMonthKey } from '../../core/dates';
 import type { Transaction } from '../../domain/models/Transaction';
@@ -76,7 +76,7 @@ export const StatsScreen = () => {
     });
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <Screen>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.monthNav}>
           <IconButton icon="chevron-left" onPress={() => setMonth(previousMonthKey(month))} testID="prev-month" />
@@ -182,18 +182,17 @@ export const StatsScreen = () => {
           </Card.Actions>
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
   content: { padding: 16, paddingBottom: 48 },
   bold: { fontWeight: '800' },
   monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   comparison: { textAlign: 'center', opacity: 0.8 },
   tiles: { flexDirection: 'row', gap: 10, marginTop: 10 },
-  card: { marginTop: 14, backgroundColor: '#fff' },
+  card: { marginTop: 14 },
   empty: { textAlign: 'center', margin: 12, opacity: 0.6 },
   amount: { alignSelf: 'center', fontWeight: '700' },
   catRow: { marginBottom: 10 },

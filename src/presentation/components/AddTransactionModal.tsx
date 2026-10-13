@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Modal, Portal, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, SegmentedButtons, Text } from 'react-native-paper';
+import { AppModal } from './Screen';
 import { Field } from './Field';
 import { CATEGORIES } from '../../core/categories';
 import { CASH_ACCOUNT_ID } from '../../domain/models/Account';
@@ -47,58 +48,55 @@ export const AddTransactionModal = ({ visible, onDismiss }: Props) => {
   };
 
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.title}>
-            Nouvelle opération
-          </Text>
-          <SegmentedButtons
-            value={type}
-            onValueChange={v => setType(v as 'EXPENSE' | 'INCOME')}
-            buttons={[
-              { value: 'EXPENSE', label: 'Dépense', icon: 'minus' },
-              { value: 'INCOME', label: 'Entrée', icon: 'plus' },
-            ]}
-            style={styles.block}
-          />
-          <AmountInput label="Montant" value={amount} onChangeText={setAmount} testID="manual-amount" />
-          <Field
-            mode="outlined"
-            label="Libellé (ex: Maquis, Taxi, Marché)"
-            value={label}
-            onChangeText={setLabel}
-            style={styles.block}
-          />
-          <Text variant="labelLarge">Compte</Text>
-          <CategoryPicker
-            value={accounts.find(a => a.id === accountId)?.name ?? ''}
-            onChange={name => setAccountId(accounts.find(a => a.name === name)?.id ?? CASH_ACCOUNT_ID)}
-            categories={accounts.map(a => a.name)}
-          />
-          {type === 'EXPENSE' && (
-            <>
-              <Text variant="labelLarge">Catégorie</Text>
-              <CategoryPicker value={category} onChange={setCategory} />
-            </>
-          )}
-          <Button
-            mode="contained"
-            onPress={save}
-            loading={saving}
-            disabled={saving || parseInputAmount(amount) <= 0}
-            style={styles.block}
-            testID="manual-save">
-            Enregistrer
-          </Button>
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible={visible} onDismiss={onDismiss}>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Text variant="titleLarge" style={styles.title}>
+          Nouvelle opération
+        </Text>
+        <SegmentedButtons
+          value={type}
+          onValueChange={v => setType(v as 'EXPENSE' | 'INCOME')}
+          buttons={[
+            { value: 'EXPENSE', label: 'Dépense', icon: 'minus' },
+            { value: 'INCOME', label: 'Entrée', icon: 'plus' },
+          ]}
+          style={styles.block}
+        />
+        <AmountInput label="Montant" value={amount} onChangeText={setAmount} testID="manual-amount" />
+        <Field
+          mode="outlined"
+          label="Libellé (ex: Maquis, Taxi, Marché)"
+          value={label}
+          onChangeText={setLabel}
+          style={styles.block}
+        />
+        <Text variant="labelLarge">Compte</Text>
+        <CategoryPicker
+          value={accounts.find(a => a.id === accountId)?.name ?? ''}
+          onChange={name => setAccountId(accounts.find(a => a.name === name)?.id ?? CASH_ACCOUNT_ID)}
+          categories={accounts.map(a => a.name)}
+        />
+        {type === 'EXPENSE' && (
+          <>
+            <Text variant="labelLarge">Catégorie</Text>
+            <CategoryPicker value={category} onChange={setCategory} />
+          </>
+        )}
+        <Button
+          mode="contained"
+          onPress={save}
+          loading={saving}
+          disabled={saving || parseInputAmount(amount) <= 0}
+          style={styles.block}
+          testID="manual-save">
+          Enregistrer
+        </Button>
+      </ScrollView>
+    </AppModal>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 20, maxHeight: '90%' },
   title: { marginBottom: 12, fontWeight: '700' },
   block: { marginVertical: 8 },
 });

@@ -1,8 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Icon, Text } from 'react-native-paper';
+import { Icon, Text, useTheme } from 'react-native-paper';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { DebtsScreen } from '../screens/DebtsScreen';
 import { LockScreen } from '../screens/LockScreen';
@@ -37,6 +37,7 @@ export const RootNavigator = () => {
   const onboarded = useFinanceStore(s => s.onboarded);
   const error = useFinanceStore(s => s.error);
   const locked = useLockStore(s => s.locked);
+  const theme = useTheme();
 
   if (!ready) {
     return (
@@ -59,11 +60,21 @@ export const RootNavigator = () => {
     return <OnboardingScreen />;
   }
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      theme={{
+        ...(theme.dark ? DarkTheme : DefaultTheme),
+        colors: {
+          ...(theme.dark ? DarkTheme : DefaultTheme).colors,
+          primary: theme.colors.primary,
+          background: theme.colors.background,
+          card: theme.colors.surface,
+          text: theme.colors.onSurface,
+        },
+      }}>
       <Tab.Navigator
         screenOptions={({ route }) => ({
           headerShown: false,
-          tabBarActiveTintColor: palette.green,
+          tabBarActiveTintColor: theme.colors.primary,
           tabBarIcon: ({ color, size }) => <Icon source={ICONS[route.name]} color={color} size={size} />,
         })}>
         <Tab.Screen name="Accueil" component={DashboardScreen} />

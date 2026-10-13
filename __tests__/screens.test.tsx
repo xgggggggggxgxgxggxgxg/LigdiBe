@@ -212,3 +212,15 @@ describe('Onboarding & navigation', () => {
     expect(screen.getAllByText('Prévisionnel').length).toBeGreaterThan(0);
   });
 });
+
+test('rendu en thème sombre sans erreur', async () => {
+  const { darkTheme } = require('../src/presentation/theme/theme');
+  const { DashboardScreen } = require('../src/presentation/screens/DashboardScreen');
+  await setup(async r => r.transactions.insertMany([tx({ id: 'x', counterpartyName: 'NUIT', occurredAt: iso() })]));
+  render(
+    <PaperProvider theme={darkTheme}>
+      <DashboardScreen />
+    </PaperProvider>,
+  );
+  expect(screen.getByText('NUIT')).toBeTruthy();
+});

@@ -29,7 +29,7 @@ export const BalanceCard = ({ account, hidden }: Props) => (
 );
 
 const styles = StyleSheet.create({
-  card: { width: 160, padding: 12, marginRight: 10, borderRadius: 14, borderTopWidth: 4, backgroundColor: '#fff' },
+  card: { width: 160, padding: 12, marginRight: 10, borderRadius: 14, borderTopWidth: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   name: { flex: 1, opacity: 0.75 },
   amount: { marginTop: 8, fontWeight: '700' },

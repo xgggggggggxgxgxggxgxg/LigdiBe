@@ -169,3 +169,20 @@ describe('getMonthTransactions', () => {
     expect((await useFinanceStore.getState().getMonthTransactions('2025-03')).map(t => t.id)).toEqual(['old']);
   });
 });
+
+describe('Thème', () => {
+  test('mode persistant et résolution clair/sombre', async () => {
+    const { resolveTheme, darkTheme, theme } = require('../src/presentation/theme/theme');
+    const repos = createInMemoryRepositories();
+    configureFinanceStore(async () => repos);
+    await useFinanceStore.getState().hydrate(NOW);
+    expect(useFinanceStore.getState().themeMode).toBe('system');
+    await useFinanceStore.getState().setThemeMode('dark');
+    await useFinanceStore.getState().hydrate(NOW);
+    expect(useFinanceStore.getState().themeMode).toBe('dark');
+    expect(resolveTheme('system', 'dark')).toBe(darkTheme);
+    expect(resolveTheme('system', null)).toBe(theme);
+    expect(resolveTheme('light', 'dark')).toBe(theme);
+    expect(resolveTheme('dark', 'light')).toBe(darkTheme);
+  });
+});

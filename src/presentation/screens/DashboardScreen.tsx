@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Chip, FAB, IconButton, Text } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import type { Transaction } from '../../domain/models/Transaction';
 import { AddTransactionModal } from '../components/AddTransactionModal';
@@ -131,7 +131,7 @@ export const DashboardScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <Screen>
       <FlatList
         data={list}
         keyExtractor={t => t.id}
@@ -157,12 +157,11 @@ export const DashboardScreen = () => {
       <FAB icon="plus" label="Dépense cash" style={styles.fab} onPress={() => setAdding(true)} testID="fab-add" />
       <AddTransactionModal visible={adding} onDismiss={() => setAdding(false)} />
       <TransactionDetailModal transaction={selected} onDismiss={() => setSelected(undefined)} />
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
   hero: {
     backgroundColor: palette.green,
     paddingHorizontal: 20,

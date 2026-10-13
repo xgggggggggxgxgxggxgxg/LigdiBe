@@ -65,7 +65,7 @@ export const DailyBudgetCard = ({ budget, streak = 0 }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  card: { marginHorizontal: 16, marginTop: 12, borderRadius: 16, backgroundColor: '#fff' },
+  card: { marginHorizontal: 16, marginTop: 12, borderRadius: 16 },
   exceeded: { borderWidth: 1.5, borderColor: palette.red },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   chips: { flexDirection: 'row', gap: 6 },

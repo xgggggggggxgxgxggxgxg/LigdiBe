@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Linking, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, FAB, IconButton, Modal, Portal, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, Card, Chip, FAB, IconButton, SegmentedButtons, Text } from 'react-native-paper';
+import { AppModal, Screen } from '../components/Screen';
 import { Field } from '../components/Field';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
 import { dayKey } from '../../core/dates';
 import type { Debt, DebtDirection } from '../../domain/models/Debt';
@@ -149,61 +149,59 @@ const AddDebtModal = ({
   const [note, setNote] = useState('');
   const validDue = due === '' || /^\d{4}-\d{2}-\d{2}$/.test(due);
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.bold}>
-            {direction === 'OWED_TO_ME' ? 'Quelqu’un me doit' : 'Je dois'}
-          </Text>
-          <Field mode="outlined" label="Nom" value={name} onChangeText={setName} style={styles.input} />
-          <Field
-            mode="outlined"
-            label="Téléphone (WhatsApp)"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            style={styles.input}
-          />
-          <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
-          <Field
-            mode="outlined"
-            label="Échéance (AAAA-MM-JJ)"
-            value={due}
-            onChangeText={setDue}
-            error={!validDue}
-            style={styles.input}
-          />
-          <Field
-            mode="outlined"
-            label="Note (ex: prêt pour la scolarité)"
-            value={note}
-            onChangeText={setNote}
-            style={styles.input}
-          />
-          <Button
-            mode="contained"
-            disabled={!name.trim() || parseInputAmount(amount) <= 0 || !validDue}
-            onPress={async () => {
-              await saveDebt({
-                contactName: name.trim(),
-                phone: phone.trim() || undefined,
-                amount: parseInputAmount(amount),
-                direction,
-                dueDate: due || undefined,
-                note: note.trim() || undefined,
-              });
-              setName('');
-              setPhone('');
-              setAmount('');
-              setDue('');
-              setNote('');
-              onDismiss();
-            }}>
-            Enregistrer
-          </Button>
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible={visible} onDismiss={onDismiss}>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Text variant="titleLarge" style={styles.bold}>
+          {direction === 'OWED_TO_ME' ? 'Quelqu’un me doit' : 'Je dois'}
+        </Text>
+        <Field mode="outlined" label="Nom" value={name} onChangeText={setName} style={styles.input} />
+        <Field
+          mode="outlined"
+          label="Téléphone (WhatsApp)"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+          style={styles.input}
+        />
+        <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
+        <Field
+          mode="outlined"
+          label="Échéance (AAAA-MM-JJ)"
+          value={due}
+          onChangeText={setDue}
+          error={!validDue}
+          style={styles.input}
+        />
+        <Field
+          mode="outlined"
+          label="Note (ex: prêt pour la scolarité)"
+          value={note}
+          onChangeText={setNote}
+          style={styles.input}
+        />
+        <Button
+          mode="contained"
+          disabled={!name.trim() || parseInputAmount(amount) <= 0 || !validDue}
+          onPress={async () => {
+            await saveDebt({
+              contactName: name.trim(),
+              phone: phone.trim() || undefined,
+              amount: parseInputAmount(amount),
+              direction,
+              dueDate: due || undefined,
+              note: note.trim() || undefined,
+            });
+            setName('');
+            setPhone('');
+            setAmount('');
+            setDue('');
+            setNote('');
+            onDismiss();
+          }}>
+          Enregistrer
+        </Button>
+      </ScrollView>
+    </AppModal>
   );
 };
 
@@ -223,71 +221,69 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
     Number(turn) <= Number(members) &&
     /^\d{4}-\d{2}-\d{2}$/.test(start);
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.bold}>
-            Nouvelle tontine
-          </Text>
-          <Field
-            mode="outlined"
-            label="Nom (ex: Tontine du marché)"
-            value={name}
-            onChangeText={setName}
-            style={styles.input}
-          />
-          <AmountInput label="Cotisation" value={amount} onChangeText={setAmount} />
-          <SegmentedButtons
-            value={weekly ? 'W' : 'M'}
-            onValueChange={v => setWeekly(v === 'W')}
-            buttons={[
-              { value: 'M', label: 'Mensuelle' },
-              { value: 'W', label: 'Hebdomadaire' },
-            ]}
-            style={styles.input}
-          />
-          <Field
-            mode="outlined"
-            label="Nombre de membres"
-            value={members}
-            onChangeText={setMembers}
-            keyboardType="number-pad"
-            style={styles.input}
-          />
-          <Field
-            mode="outlined"
-            label="Mon rang de ramassage"
-            value={turn}
-            onChangeText={setTurn}
-            keyboardType="number-pad"
-            style={styles.input}
-          />
-          <Field
-            mode="outlined"
-            label="Date de début (AAAA-MM-JJ)"
-            value={start}
-            onChangeText={setStart}
-            style={styles.input}
-          />
-          <Button
-            mode="contained"
-            disabled={!ok}
-            onPress={async () => {
-              await saveTontine({
-                name: name.trim(),
-                contributionAmount: parseInputAmount(amount),
-                frequency: weekly ? 'WEEKLY' : 'MONTHLY',
-                membersCount: Number(members),
-                myTurn: Number(turn),
-                startDate: start,
-              });
-              onDismiss();
-            }}>
-            Créer
-          </Button>
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible={visible} onDismiss={onDismiss}>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Text variant="titleLarge" style={styles.bold}>
+          Nouvelle tontine
+        </Text>
+        <Field
+          mode="outlined"
+          label="Nom (ex: Tontine du marché)"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+        />
+        <AmountInput label="Cotisation" value={amount} onChangeText={setAmount} />
+        <SegmentedButtons
+          value={weekly ? 'W' : 'M'}
+          onValueChange={v => setWeekly(v === 'W')}
+          buttons={[
+            { value: 'M', label: 'Mensuelle' },
+            { value: 'W', label: 'Hebdomadaire' },
+          ]}
+          style={styles.input}
+        />
+        <Field
+          mode="outlined"
+          label="Nombre de membres"
+          value={members}
+          onChangeText={setMembers}
+          keyboardType="number-pad"
+          style={styles.input}
+        />
+        <Field
+          mode="outlined"
+          label="Mon rang de ramassage"
+          value={turn}
+          onChangeText={setTurn}
+          keyboardType="number-pad"
+          style={styles.input}
+        />
+        <Field
+          mode="outlined"
+          label="Date de début (AAAA-MM-JJ)"
+          value={start}
+          onChangeText={setStart}
+          style={styles.input}
+        />
+        <Button
+          mode="contained"
+          disabled={!ok}
+          onPress={async () => {
+            await saveTontine({
+              name: name.trim(),
+              contributionAmount: parseInputAmount(amount),
+              frequency: weekly ? 'WEEKLY' : 'MONTHLY',
+              membersCount: Number(members),
+              myTurn: Number(turn),
+              startDate: start,
+            });
+            onDismiss();
+          }}>
+          Créer
+        </Button>
+      </ScrollView>
+    </AppModal>
   );
 };
 
@@ -300,7 +296,7 @@ export const DebtsScreen = () => {
   const list = debts.filter(d => d.direction === tab);
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <Screen>
       <Text variant="headlineSmall" style={styles.title}>
         Carnet & Épargne
       </Text>
@@ -352,23 +348,21 @@ export const DebtsScreen = () => {
       ) : (
         <AddDebtModal visible={adding} direction={tab} onDismiss={() => setAdding(false)} />
       )}
-    </SafeAreaView>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: palette.surface },
   title: { marginHorizontal: 16, marginTop: 12, fontWeight: '800' },
   tiles: { flexDirection: 'row', gap: 10, margin: 16 },
   segment: { marginHorizontal: 16 },
   list: { padding: 16, paddingBottom: 96 },
-  card: { marginBottom: 12, backgroundColor: '#fff' },
+  card: { marginBottom: 12 },
   settled: { opacity: 0.6 },
   row: { flexDirection: 'row', alignItems: 'center' },
   flex: { flex: 1 },
   bold: { fontWeight: '800' },
   empty: { textAlign: 'center', margin: 24, opacity: 0.6 },
   fab: { position: 'absolute', right: 16, bottom: 16, backgroundColor: palette.gold },
-  modal: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 20, maxHeight: '90%' },
   input: { marginVertical: 6 },
 });

@@ -1,4 +1,4 @@
-import { MD3LightTheme, type MD3Theme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, type MD3Theme } from 'react-native-paper';
 
 /** « Ligdi » = l'argent en mooré. Vert prospérité + or. */
 export const palette = {
@@ -31,6 +31,30 @@ export const theme: MD3Theme = {
     error: palette.red,
   },
 };
+
+/** Thème sombre : confort de lecture la nuit et économie de batterie (écrans AMOLED). */
+export const darkTheme: MD3Theme = {
+  ...MD3DarkTheme,
+  roundness: 3,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#5ED3A6',
+    onPrimary: '#00382A',
+    primaryContainer: '#0A5A45',
+    onPrimaryContainer: '#C8EBDD',
+    secondary: palette.gold,
+    secondaryContainer: '#5C4300',
+    onSecondaryContainer: '#FFE8B0',
+    background: '#0E1412',
+    surface: '#151C19',
+    error: '#FF8A80',
+  },
+};
+
+export type ThemeMode = 'system' | 'light' | 'dark';
+
+export const resolveTheme = (mode: ThemeMode, systemScheme: 'light' | 'dark' | null | undefined): MD3Theme =>
+  (mode === 'system' ? systemScheme === 'dark' : mode === 'dark') ? darkTheme : theme;
 
 export const providerColor = (provider: string): string => {
   switch (provider) {

@@ -9,6 +9,7 @@ import type { PlannedItem } from '../../domain/models/PlannedItem';
 import type { SavingsGoal } from '../../domain/models/SavingsGoal';
 import type { Tontine } from '../../domain/models/Tontine';
 import type { Transaction, TransactionType } from '../../domain/models/Transaction';
+import type { ThemeMode } from '../theme/theme';
 import type { Repositories } from '../../domain/repositories';
 import { autoMatchPlannedItems, carryOverToNextMonth } from '../../domain/usecases/BudgetForecast';
 import { counterpartyKey } from '../../domain/usecases/CategorizeTransaction';
@@ -24,6 +25,7 @@ import {
 const PAID_FIXED_KEY = (month: string) => `paidFixed:${month}`;
 const ONBOARDED_KEY = 'onboarded';
 const USER_NAME_KEY = 'userName';
+const THEME_KEY = 'themeMode';
 
 export interface ManualTransactionInput {
   accountId: string;
@@ -53,6 +55,7 @@ export interface FinanceState {
   userName: string;
   onboarded: boolean;
   extraSenders: string[];
+  themeMode: ThemeMode;
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -87,6 +90,7 @@ export interface FinanceState {
   /** Transactions d'un mois quelconque (depuis la mémoire si disponible, sinon la base). */
   getMonthTransactions(month: string): Promise<Transaction[]>;
   setExtraSenders(senders: string[]): Promise<void>;
+  setThemeMode(mode: ThemeMode): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -134,6 +138,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     userName: '',
     onboarded: false,
     extraSenders: [],
+    themeMode: 'system',
 
     async hydrate(now = new Date()) {
       try {
@@ -152,6 +157,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           onboarded,
           extraSenders,
           savingsGoals,
+          themeMode,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -165,6 +171,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<boolean>(ONBOARDED_KEY, false),
           r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
           r.savingsGoals.getAll(),
+          r.settings.getJson<ThemeMode>(THEME_KEY, 'system'),
         ]);
         set({
           ready: true,
@@ -182,6 +189,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           onboarded,
           extraSenders,
           savingsGoals,
+          themeMode,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -456,6 +464,12 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.settings.setJson(USER_NAME_KEY, userName);
       set({ userName });
+    },
+
+    async setThemeMode(mode) {
+      const r = await repos();
+      await r.settings.setJson(THEME_KEY, mode);
+      set({ themeMode: mode });
     },
 
     async setExtraSenders(senders) {

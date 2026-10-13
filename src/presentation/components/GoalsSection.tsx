@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, IconButton, Modal, Portal, ProgressBar, Text } from 'react-native-paper';
+import { Button, Card, Chip, IconButton, ProgressBar, Text } from 'react-native-paper';
+import { AppModal } from './Screen';
 import { Field } from './Field';
 import { formatFCFA } from '../../core/currency';
 import type { SavingsGoal } from '../../domain/models/SavingsGoal';
@@ -63,55 +64,53 @@ export const AddGoalModal = ({ visible, onDismiss }: { visible: boolean; onDismi
   const [deadline, setDeadline] = useState('');
   const validDeadline = deadline === '' || /^\d{4}-\d{2}-\d{2}$/.test(deadline);
   return (
-    <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <ScrollView keyboardShouldPersistTaps="handled">
-          <Text variant="titleLarge" style={styles.bold}>
-            Nouvel objectif d'épargne
-          </Text>
-          <View style={styles.emojis}>
-            {EMOJIS.map(e => (
-              <Chip key={e} selected={e === emoji} onPress={() => setEmoji(e)} compact>
-                {e}
-              </Chip>
-            ))}
-          </View>
-          <Field
-            mode="outlined"
-            label="Nom (ex: Mouton de Tabaski)"
-            value={name}
-            onChangeText={setName}
-            style={styles.input}
-          />
-          <AmountInput label="Montant à atteindre" value={target} onChangeText={setTarget} />
-          <Field
-            mode="outlined"
-            label="Échéance (AAAA-MM-JJ, optionnelle)"
-            value={deadline}
-            onChangeText={setDeadline}
-            error={!validDeadline}
-            style={styles.input}
-          />
-          <Button
-            mode="contained"
-            disabled={!name.trim() || parseInputAmount(target) <= 0 || !validDeadline}
-            onPress={async () => {
-              await saveGoal({
-                name: name.trim(),
-                emoji,
-                targetAmount: parseInputAmount(target),
-                deadline: deadline || undefined,
-              });
-              setName('');
-              setTarget('');
-              setDeadline('');
-              onDismiss();
-            }}>
-            Créer l'objectif
-          </Button>
-        </ScrollView>
-      </Modal>
-    </Portal>
+    <AppModal visible={visible} onDismiss={onDismiss}>
+      <ScrollView keyboardShouldPersistTaps="handled">
+        <Text variant="titleLarge" style={styles.bold}>
+          Nouvel objectif d'épargne
+        </Text>
+        <View style={styles.emojis}>
+          {EMOJIS.map(e => (
+            <Chip key={e} selected={e === emoji} onPress={() => setEmoji(e)} compact>
+              {e}
+            </Chip>
+          ))}
+        </View>
+        <Field
+          mode="outlined"
+          label="Nom (ex: Mouton de Tabaski)"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+        />
+        <AmountInput label="Montant à atteindre" value={target} onChangeText={setTarget} />
+        <Field
+          mode="outlined"
+          label="Échéance (AAAA-MM-JJ, optionnelle)"
+          value={deadline}
+          onChangeText={setDeadline}
+          error={!validDeadline}
+          style={styles.input}
+        />
+        <Button
+          mode="contained"
+          disabled={!name.trim() || parseInputAmount(target) <= 0 || !validDeadline}
+          onPress={async () => {
+            await saveGoal({
+              name: name.trim(),
+              emoji,
+              targetAmount: parseInputAmount(target),
+              deadline: deadline || undefined,
+            });
+            setName('');
+            setTarget('');
+            setDeadline('');
+            onDismiss();
+          }}>
+          Créer l'objectif
+        </Button>
+      </ScrollView>
+    </AppModal>
   );
 };
 
@@ -134,14 +133,13 @@ export const GoalsList = () => {
 
 const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 96 },
-  card: { marginBottom: 12, backgroundColor: '#fff' },
+  card: { marginBottom: 12 },
   bar: { height: 10, borderRadius: 5, marginBottom: 8 },
   muted: { opacity: 0.65, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center' },
   flex: { flex: 1 },
   bold: { fontWeight: '800' },
   empty: { textAlign: 'center', margin: 24, opacity: 0.6 },
-  modal: { backgroundColor: '#fff', margin: 16, padding: 20, borderRadius: 20, maxHeight: '90%' },
   input: { marginVertical: 6 },
   emojis: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginVertical: 8 },
 });

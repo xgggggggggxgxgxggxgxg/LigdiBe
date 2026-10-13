@@ -1,13 +1,13 @@
 import notifee from '@notifee/react-native';
 import React, { useEffect } from 'react';
-import { AppState, StatusBar } from 'react-native';
+import { AppState, StatusBar, useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getRepositories } from './src/data/repositories';
 import { RootNavigator } from './src/presentation/navigation/RootNavigator';
 import { useFinanceStore } from './src/presentation/store/useFinanceStore';
 import { useLockStore } from './src/presentation/store/useLockStore';
-import { theme } from './src/presentation/theme/theme';
+import { resolveTheme } from './src/presentation/theme/theme';
 import {
   handleNotificationEvent,
   scheduleDailyReminders,
@@ -38,6 +38,9 @@ const syncOnForeground = async () => {
 };
 
 function App(): React.JSX.Element {
+  const themeMode = useFinanceStore(s => s.themeMode);
+  const systemScheme = useColorScheme();
+  const theme = resolveTheme(themeMode, systemScheme);
   useEffect(() => {
     useLockStore.getState().init();
     syncOnForeground();
@@ -61,7 +64,10 @@ function App(): React.JSX.Element {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={theme}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.primary} />
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor={theme.dark ? theme.colors.background : theme.colors.primary}
+        />
         <RootNavigator />
       </PaperProvider>
     </SafeAreaProvider>

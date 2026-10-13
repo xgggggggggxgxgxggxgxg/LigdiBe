@@ -1,9 +1,8 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { List, Text } from 'react-native-paper';
+import { List, Text, useTheme } from 'react-native-paper';
 import { formatFCFA } from '../../core/currency';
 import type { Transaction } from '../../domain/models/Transaction';
-import { palette } from '../theme/theme';
 
 const ICONS: Record<Transaction['type'], string> = {
   EXPENSE: 'cart-outline',
@@ -30,8 +29,9 @@ interface Props {
 }
 
 export const TransactionItem = ({ transaction: t, onPress }: Props) => {
+  const theme = useTheme();
   const sign = transactionSign(t);
-  const color = sign === '+' ? palette.green : sign === '-' ? palette.red : '#555';
+  const color = sign === '+' ? theme.colors.primary : sign === '-' ? theme.colors.error : theme.colors.onSurfaceVariant;
   const time = t.occurredAt.slice(8, 10) + '/' + t.occurredAt.slice(5, 7) + ' ' + t.occurredAt.slice(11, 16);
   return (
     <List.Item
