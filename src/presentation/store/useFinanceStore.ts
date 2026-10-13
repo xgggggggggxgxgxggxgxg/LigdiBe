@@ -84,6 +84,8 @@ export interface FinanceState {
 
   completeOnboarding(userName: string, config: BudgetConfig): Promise<void>;
   setUserName(userName: string): Promise<void>;
+  /** Transactions d'un mois quelconque (depuis la mémoire si disponible, sinon la base). */
+  getMonthTransactions(month: string): Promise<Transaction[]>;
   setExtraSenders(senders: string[]): Promise<void>;
 }
 
@@ -439,6 +441,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       await r.settings.saveBudgetConfig(config);
       await r.accounts.saveMany(get().accounts);
       set({ userName, onboarded: true, budgetConfig: config });
+    },
+
+    async getMonthTransactions(month) {
+      const windowStart = loadWindowStart(get().now).slice(0, 7);
+      if (month >= windowStart) {
+        return get().transactions.filter(t => t.occurredAt.startsWith(month));
+      }
+      const r = await repos();
+      return r.transactions.listBetween(`${month}-01`, `${nextMonthKey(month)}-01`);
     },
 
     async setUserName(userName) {

@@ -90,3 +90,34 @@ export const buildInsights = (monthTransactions: ReadonlyArray<Transaction>): In
   }
   return insights;
 };
+
+export interface MonthComparison {
+  current: number;
+  previous: number;
+  /** Variation relative (-0.12 = 12 % de moins). `undefined` si pas de mois précédent. */
+  change?: number;
+  message: string;
+}
+
+/** Compare les dépenses de deux mois (hors retraits cash) — levier de motivation. */
+export const compareMonths = (
+  currentMonthTxs: ReadonlyArray<Transaction>,
+  previousMonthTxs: ReadonlyArray<Transaction>,
+  previousLabel: string,
+): MonthComparison => {
+  const sum = (txs: ReadonlyArray<Transaction>) => txs.filter(isSpending).reduce((s, t) => s + t.amount, 0);
+  const current = sum(currentMonthTxs);
+  const previous = sum(previousMonthTxs);
+  if (previous === 0) {
+    return { current, previous, message: `Pas encore de données pour ${previousLabel}.` };
+  }
+  const change = (current - previous) / previous;
+  const pct = Math.abs(Math.round(change * 100));
+  const message =
+    pct === 0
+      ? `Dépenses stables par rapport à ${previousLabel}.`
+      : change < 0
+      ? `🎉 ${pct} % de dépenses en moins qu'en ${previousLabel}.`
+      : `📈 ${pct} % de dépenses en plus qu'en ${previousLabel}.`;
+  return { current, previous, change, message };
+};

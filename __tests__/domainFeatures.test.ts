@@ -1,4 +1,5 @@
 import { CATEGORIES } from '../src/core/categories';
+import { previousMonthKey } from '../src/core/dates';
 import type { Debt } from '../src/domain/models/Debt';
 import type { PlannedItem } from '../src/domain/models/PlannedItem';
 import type { Tontine } from '../src/domain/models/Tontine';
@@ -21,6 +22,7 @@ import {
 } from '../src/domain/usecases/ManageDebts';
 import {
   buildInsights,
+  compareMonths,
   spendingByCategory,
   topRecipients,
   totalAirtime,
@@ -257,5 +259,29 @@ describe('Tontine', () => {
     const w = tontineStatus({ ...t, frequency: 'WEEKLY', startDate: '2026-10-01T08:00:00', myTurn: 6 }, NOW);
     expect(w).toMatchObject({ dueCount: 2, roundsUntilMyTurn: 4, hasReceivedPot: false });
     expect(tontineStatus({ ...t, startDate: '2025-01-01' }, NOW).nextContributionDate).toBeUndefined();
+  });
+});
+
+describe('Comparaison mensuelle', () => {
+  test('baisse, hausse, stable, sans historique', () => {
+    expect(previousMonthKey('2026-01')).toBe('2025-12');
+    expect(previousMonthKey('2026-10')).toBe('2026-09');
+    expect(
+      compareMonths(
+        [tx({ amount: 880 })],
+        [tx({ amount: 1000 }), tx({ type: 'CASH_WITHDRAWAL', amount: 5000 })],
+        'septembre',
+      ),
+    ).toMatchObject({
+      change: -0.12,
+      message: "🎉 12 % de dépenses en moins qu'en septembre.",
+    });
+    expect(compareMonths([tx({ amount: 1500 })], [tx({ amount: 1000 })], 'août').message).toMatch(
+      /50 % de dépenses en plus/,
+    );
+    expect(compareMonths([tx({ amount: 1001 })], [tx({ amount: 1000 })], 'août').message).toMatch(/stables/);
+    const none = compareMonths([tx({})], [], 'juillet');
+    expect(none.previous).toBe(0);
+    expect(none.change).toBeUndefined();
   });
 });

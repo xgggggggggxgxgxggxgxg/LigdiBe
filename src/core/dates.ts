@@ -22,6 +22,11 @@ export const nextMonthKey = (month: string): string => {
   return m === 12 ? `${y + 1}-01` : `${y}-${pad(m + 1)}`;
 };
 
+export const previousMonthKey = (month: string): string => {
+  const [y, m] = month.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12` : `${y}-${pad(m - 1)}`;
+};
+
 export const daysInMonth = (d: Date): number => new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
 
 export const startOfDay = (d: Date): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate());

@@ -1,7 +1,7 @@
 import { CATEGORIES } from '../src/core/categories';
 import { DEFAULT_BUDGET_CONFIG } from '../src/domain/models/Budget';
 import { configureFinanceStore, useFinanceStore } from '../src/presentation/store/useFinanceStore';
-import { createInMemoryRepositories } from './helpers/inMemoryRepositories';
+import { createInMemoryRepositories, tx } from './helpers/inMemoryRepositories';
 
 const MOOV_WITHDRAWAL = `Retrait reussi auprès de l'Agent IBRAHIM ILBOUDO\nCode d'agent: 1003631\nMontant: 1 000,00 FCFA\nFrais: 10,00 FCFA\nTotal: 1 010,00 FCFA\nDate: 13/10/2026 08:17:58\nTxn ID: DIU3L2SENF\nSolde: 16 316,00 FCFA`;
 const NOW = new Date(2026, 9, 13, 10);
@@ -153,5 +153,19 @@ describe('useFinanceStore', () => {
     expect(store().extraSenders).toEqual(['CorisMoney']);
     await store().hydrate(NOW);
     expect(store()).toMatchObject({ userName: 'Awa', extraSenders: ['CorisMoney'], onboarded: true });
+  });
+});
+
+describe('getMonthTransactions', () => {
+  test('mémoire pour les mois récents, base pour les anciens', async () => {
+    const repos = createInMemoryRepositories();
+    configureFinanceStore(async () => repos);
+    await repos.transactions.insertMany([
+      tx({ id: 'old', occurredAt: '2025-03-10T10:00:00' }),
+      tx({ id: 'recent', occurredAt: '2026-10-02T10:00:00' }),
+    ]);
+    await useFinanceStore.getState().hydrate(NOW);
+    expect((await useFinanceStore.getState().getMonthTransactions('2026-10')).map(t => t.id)).toEqual(['recent']);
+    expect((await useFinanceStore.getState().getMonthTransactions('2025-03')).map(t => t.id)).toEqual(['old']);
   });
 });

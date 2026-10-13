@@ -1,12 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Button, Card, List, ProgressBar, Text } from 'react-native-paper';
+import { Button, Card, IconButton, List, ProgressBar, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
-import { formatMonthLabel, monthKey } from '../../core/dates';
+import { formatMonthLabel, monthKey, nextMonthKey, previousMonthKey } from '../../core/dates';
+import type { Transaction } from '../../domain/models/Transaction';
 import { getRepositories } from '../../data/repositories';
 import {
   buildInsights,
+  compareMonths,
   spendingByCategory,
   topRecipients,
   totalAirtime,
@@ -21,9 +23,31 @@ import { palette } from '../theme/theme';
 export const StatsScreen = () => {
   const transactions = useFinanceStore(s => s.transactions);
   const now = useFinanceStore(s => s.now);
+  const getMonthTransactions = useFinanceStore(s => s.getMonthTransactions);
   const [exporting, setExporting] = useState(false);
-  const month = monthKey(now);
-  const monthTxs = useMemo(() => transactions.filter(t => t.occurredAt.startsWith(month)), [transactions, month]);
+  const currentMonth = monthKey(now);
+  const [month, setMonth] = useState(currentMonth);
+  const [monthTxs, setMonthTxs] = useState<Transaction[]>([]);
+  const [prevTxs, setPrevTxs] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    Promise.all([getMonthTransactions(month), getMonthTransactions(previousMonthKey(month))]).then(([cur, prev]) => {
+      if (alive) {
+        setMonthTxs(cur);
+        setPrevTxs(prev);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+    // `transactions` : recharge quand un nouveau SMS arrive.
+  }, [month, transactions, getMonthTransactions]);
+
+  const comparison = useMemo(
+    () => compareMonths(monthTxs, prevTxs, formatMonthLabel(previousMonthKey(month)).split(' ')[0]),
+    [monthTxs, prevTxs, month],
+  );
   const top = useMemo(() => topRecipients(monthTxs, 5), [monthTxs]);
   const categories = useMemo(() => spendingByCategory(monthTxs).slice(0, 8), [monthTxs]);
   const insights = useMemo(() => buildInsights(monthTxs), [monthTxs]);
@@ -54,8 +78,20 @@ export const StatsScreen = () => {
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineSmall" style={styles.bold}>
-          Statistiques — {formatMonthLabel(month)}
+        <View style={styles.monthNav}>
+          <IconButton icon="chevron-left" onPress={() => setMonth(previousMonthKey(month))} testID="prev-month" />
+          <Text variant="titleLarge" style={styles.bold} testID="stats-month">
+            {formatMonthLabel(month)}
+          </Text>
+          <IconButton
+            icon="chevron-right"
+            disabled={month >= currentMonth}
+            onPress={() => setMonth(nextMonthKey(month))}
+            testID="next-month"
+          />
+        </View>
+        <Text style={styles.comparison} testID="month-comparison">
+          {comparison.message}
         </Text>
         <View style={styles.tiles}>
           <StatTile
@@ -154,6 +190,8 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: palette.surface },
   content: { padding: 16, paddingBottom: 48 },
   bold: { fontWeight: '800' },
+  monthNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  comparison: { textAlign: 'center', opacity: 0.8 },
   tiles: { flexDirection: 'row', gap: 10, marginTop: 10 },
   card: { marginTop: 14, backgroundColor: '#fff' },
   empty: { textAlign: 'center', margin: 12, opacity: 0.6 },
