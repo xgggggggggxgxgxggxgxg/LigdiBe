@@ -7,6 +7,7 @@
 | Domaine | Ce que fait l'app |
 |---|---|
 | Lecture SMS | Analyse en temps réel (même app fermée) des SMS Orange Money, Moov Money, Wave/UBA, Ecobank, Telecel… Whitelist d'expéditeurs, rejet des OTP / PIN / 2FA. |
+| SMS non reconnus | Un SMS opérateur au format inconnu n'est pas perdu : il est mis de côté (montant et compte pré-remplis) et s'ajoute en un tap depuis l'accueil. |
 | Retrait kiosque | MoMo débité (montant + frais), **Poche (espèces) créditée du net** : un retrait n'est pas une dépense. Frais → « Frais & Taxes ». |
 | Crédit & data | Compteur jour / mois / an des micro-recharges, alerte plafond. |
 | Budget du jour | `(budget disponible − charges fixes) / jours restants` pondéré : ven. 18h → dim. ×1,5 (paramétrable), jours spéciaux (Tabaski…). Série de jours sous budget 🔥. |
@@ -41,7 +42,7 @@ __tests__/           Jest (parseur : 100 % de couverture)
 
 ```bash
 npm install --legacy-peer-deps
-npm test            # 160+ tests
+npm test            # 170+ tests
 npx tsc --noEmit
 npm run android     # appareil Android ou émulateur
 ```

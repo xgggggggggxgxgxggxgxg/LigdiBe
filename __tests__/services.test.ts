@@ -161,7 +161,7 @@ describe('Ingestion SMS (Headless) et import historique', () => {
     });
     const repos = createInMemoryRepositories();
     const report = await ingestion!.importSmsBacklog(repos, 0);
-    expect(report).toEqual({ recorded: 1, duplicates: 1, ignored: 1 });
+    expect(report).toEqual({ recorded: 1, duplicates: 1, ignored: 1, unrecognized: 0 });
 
     const live = await ingestion!.processRealtimeSms(repos, {
       sender: 'OrangeMoney',

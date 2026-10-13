@@ -3,10 +3,18 @@ import { roundMoney } from '../../core/currency';
 import { toLocalIso } from '../../core/dates';
 import { fingerprint, generateId } from '../../core/id';
 import { parseTransactionSms, type ParsedSms } from '../../data/parser/SmsParserEngine';
+import { isSensitiveSecuritySms, isWhitelistedSender } from '../../data/parser/securityFilters';
 import { accountIdForProvider, CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../models/Account';
 import type { Provider, Transaction } from '../models/Transaction';
 import type { AccountRepository, SettingsRepository, TransactionRepository } from '../repositories';
 import { autoCategorize } from './CategorizeTransaction';
+import {
+  enqueueUnrecognized,
+  looksLikeFinancialSms,
+  toUnrecognizedSms,
+  UNRECOGNIZED_SMS_KEY,
+  type UnrecognizedSms,
+} from './UnrecognizedSms';
 
 export interface LedgerEntries {
   transactions: Transaction[];
@@ -169,6 +177,8 @@ export const buildLedgerEntries = (
 
 export type ProcessSmsResult =
   | { status: 'IGNORED' }
+  /** Expéditeur agréé mais format inconnu : SMS mis de côté pour saisie manuelle. */
+  | { status: 'UNRECOGNIZED'; pending: UnrecognizedSms }
   | { status: 'DUPLICATE'; parsed: ParsedSms }
   | { status: 'RECORDED'; parsed: ParsedSms; entries: LedgerEntries };
 
@@ -196,7 +206,7 @@ export class ProcessIncomingSmsUseCase {
     const extraSenders = await this.repos.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []);
     const parsed = parseTransactionSms(sms.body, { sender: sms.sender, extraSenders });
     if (!parsed) {
-      return { status: 'IGNORED' };
+      return this.keepUnrecognized(sms, extraSenders);
     }
     const duplicate = parsed.reference
       ? await this.repos.transactions.existsByReference(parsed.provider, parsed.reference)
@@ -215,5 +225,21 @@ export class ProcessIncomingSmsUseCase {
     };
     await (this.repos.runInTransaction ? this.repos.runInTransaction(write) : write());
     return { status: 'RECORDED', parsed, entries };
+  }
+
+  /** Conserve un SMS opérateur non analysé (jamais un code de sécurité ni un expéditeur inconnu). */
+  private async keepUnrecognized(sms: IncomingSms, extraSenders: string[]): Promise<ProcessSmsResult> {
+    if (
+      !sms.sender ||
+      !isWhitelistedSender(sms.sender, extraSenders) ||
+      isSensitiveSecuritySms(sms.body) ||
+      !looksLikeFinancialSms(sms.body)
+    ) {
+      return { status: 'IGNORED' };
+    }
+    const pending = toUnrecognizedSms(sms.body, sms.sender, toLocalIso(sms.receivedAt ?? new Date()));
+    const queue = await this.repos.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []);
+    await this.repos.settings.setJson(UNRECOGNIZED_SMS_KEY, enqueueUnrecognized(queue, pending));
+    return { status: 'UNRECOGNIZED', pending };
   }
 }

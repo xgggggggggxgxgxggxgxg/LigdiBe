@@ -93,7 +93,11 @@ export const SettingsScreen = () => {
       }
       const report = await importSmsBacklog(await getRepositories(), Date.now() - 90 * DAY_MS);
       await hydrate();
-      Alert.alert('Import terminé', `${report.recorded} opération(s) ajoutée(s), ${report.duplicates} déjà connue(s).`);
+      Alert.alert(
+        'Import terminé',
+        `${report.recorded} opération(s) ajoutée(s), ${report.duplicates} déjà connue(s).` +
+          (report.unrecognized > 0 ? ` ${report.unrecognized} SMS à vérifier sur l'accueil.` : ''),
+      );
     } catch (e) {
       Alert.alert('Import impossible', e instanceof Error ? e.message : String(e));
     } finally {

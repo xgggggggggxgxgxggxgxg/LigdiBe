@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CATEGORIES } from '../../core/categories';
 import { monthKey, nextMonthKey, toLocalIso } from '../../core/dates';
-import { generateId } from '../../core/id';
+import { fingerprint, generateId } from '../../core/id';
 import { CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../../domain/models/Account';
 import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../domain/models/Budget';
 import type { Debt } from '../../domain/models/Debt';
@@ -21,6 +21,7 @@ import {
   type IncomingSms,
   type ProcessSmsResult,
 } from '../../domain/usecases/ProcessIncomingSms';
+import { UNRECOGNIZED_SMS_KEY, type UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
 
 const PAID_FIXED_KEY = (month: string) => `paidFixed:${month}`;
 const ONBOARDED_KEY = 'onboarded';
@@ -35,6 +36,8 @@ export interface ManualTransactionInput {
   note?: string;
   counterpartyName?: string;
   occurredAt?: Date;
+  /** SMS d'origine (opération saisie depuis un SMS non reconnu). */
+  rawSms?: string;
 }
 
 export interface FinanceState {
@@ -56,6 +59,8 @@ export interface FinanceState {
   onboarded: boolean;
   extraSenders: string[];
   themeMode: ThemeMode;
+  /** SMS opérateur au format inconnu, en attente de saisie manuelle. */
+  unrecognizedSms: UnrecognizedSms[];
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -91,6 +96,9 @@ export interface FinanceState {
   getMonthTransactions(month: string): Promise<Transaction[]>;
   setExtraSenders(senders: string[]): Promise<void>;
   setThemeMode(mode: ThemeMode): Promise<void>;
+  /** Transforme un SMS non reconnu en opération manuelle puis le retire de la file. */
+  resolveUnrecognizedSms(smsId: string, input: ManualTransactionInput): Promise<Transaction>;
+  dismissUnrecognizedSms(smsId: string): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -139,6 +147,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     onboarded: false,
     extraSenders: [],
     themeMode: 'system',
+    unrecognizedSms: [],
 
     async hydrate(now = new Date()) {
       try {
@@ -158,6 +167,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           extraSenders,
           savingsGoals,
           themeMode,
+          unrecognizedSms,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -172,6 +182,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
           r.savingsGoals.getAll(),
           r.settings.getJson<ThemeMode>(THEME_KEY, 'system'),
+          r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []),
         ]);
         set({
           ready: true,
@@ -190,6 +201,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           extraSenders,
           savingsGoals,
           themeMode,
+          unrecognizedSms,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -202,6 +214,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       if (result.status === 'RECORDED') {
         await Promise.all([reloadTransactions(), reloadAccounts()]);
         await get().autoCheckPlannedItems();
+      } else if (result.status === 'UNRECOGNIZED') {
+        set({ unrecognizedSms: await r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []) });
       }
       return result;
     },
@@ -224,6 +238,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
         category: input.category,
         note: input.note,
         counterpartyName: input.counterpartyName,
+        rawSms: input.rawSms,
+        // Empêche un ré-import ultérieur du même SMS de créer un doublon.
+        smsFingerprint: input.rawSms ? fingerprint(input.rawSms) : undefined,
         source: 'MANUAL',
         occurredAt: toLocalIso(input.occurredAt ?? new Date()),
         createdAt: nowIso,
@@ -472,6 +489,24 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.settings.setJson(THEME_KEY, mode);
       set({ themeMode: mode });
+    },
+
+    async resolveUnrecognizedSms(smsId, input) {
+      const pending = get().unrecognizedSms.find(u => u.id === smsId);
+      const tx = await get().addManualTransaction({
+        ...input,
+        rawSms: input.rawSms ?? pending?.body,
+        occurredAt: input.occurredAt ?? (pending ? new Date(pending.receivedAt) : undefined),
+      });
+      await get().dismissUnrecognizedSms(smsId);
+      return tx;
+    },
+
+    async dismissUnrecognizedSms(smsId) {
+      const r = await repos();
+      const unrecognizedSms = get().unrecognizedSms.filter(u => u.id !== smsId);
+      await r.settings.setJson(UNRECOGNIZED_SMS_KEY, unrecognizedSms);
+      set({ unrecognizedSms });
     },
 
     async setExtraSenders(senders) {

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Chip, FAB, IconButton, Text } from 'react-native-paper';
+import { Banner, Chip, FAB, IconButton, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import type { Transaction } from '../../domain/models/Transaction';
@@ -11,6 +11,7 @@ import { DailyBudgetCard } from '../components/DailyBudgetCard';
 import { StatTile } from '../components/StatTile';
 import { TransactionDetailModal } from '../components/TransactionDetailModal';
 import { TransactionItem } from '../components/TransactionItem';
+import { UnrecognizedSmsModal } from '../components/UnrecognizedSmsModal';
 import { useAccounts } from '../hooks/useAccounts';
 import { useAirtime } from '../hooks/useAirtime';
 import { useBudget } from '../hooks/useBudget';
@@ -54,6 +55,8 @@ export const DashboardScreen = () => {
   const userName = useFinanceStore(s => s.userName);
   const monthlyBudget = useFinanceStore(s => s.budgetConfig.monthlyBudget);
   const hydrate = useFinanceStore(s => s.hydrate);
+  const unrecognizedCount = useFinanceStore(s => s.unrecognizedSms.length);
+  const [reviewing, setReviewing] = useState(false);
   const [filter, setFilter] = useState<QuickFilter>('ALL');
   const [hidden, setHidden] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -94,6 +97,15 @@ export const DashboardScreen = () => {
           <BalanceCard key={a.id} account={a} hidden={hidden} />
         ))}
       </ScrollView>
+      <Banner
+        visible={unrecognizedCount > 0}
+        icon="message-alert-outline"
+        actions={[{ label: 'Vérifier', onPress: () => setReviewing(true), testID: 'review-unrecognized' }]}
+        style={styles.banner}>
+        {`${unrecognizedCount} SMS opérateur non reconnu${unrecognizedCount > 1 ? 's' : ''} : ajoute-le${
+          unrecognizedCount > 1 ? 's' : ''
+        } pour garder des soldes justes.`}
+      </Banner>
       <DailyBudgetCard budget={budget} streak={budget.streak} />
       <ChallengeCard />
       <View style={styles.tiles}>
@@ -158,6 +170,7 @@ export const DashboardScreen = () => {
       />
       <FAB icon="plus" label="Dépense cash" style={styles.fab} onPress={() => setAdding(true)} testID="fab-add" />
       <AddTransactionModal visible={adding} onDismiss={() => setAdding(false)} />
+      <UnrecognizedSmsModal visible={reviewing} onDismiss={() => setReviewing(false)} />
       <TransactionDetailModal transaction={selected} onDismiss={() => setSelected(undefined)} />
     </Screen>
   );
@@ -176,6 +189,7 @@ const styles = StyleSheet.create({
   heroMuted: { color: '#fff', opacity: 0.8 },
   total: { color: '#fff', fontWeight: '800' },
   carousel: { paddingHorizontal: 16, marginTop: -18, paddingBottom: 4 },
+  banner: { marginHorizontal: 16, marginTop: 12, borderRadius: 16 },
   tiles: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 },
   filters: { paddingHorizontal: 16, paddingVertical: 12, gap: 6 },
   filter: { marginRight: 4 },
