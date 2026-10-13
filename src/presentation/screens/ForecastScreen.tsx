@@ -15,8 +15,8 @@ import {
   SegmentedButtons,
   Switch,
   Text,
-  TextInput,
 } from 'react-native-paper';
+import { Field } from '../components/Field';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CATEGORIES } from '../../core/categories';
 import { formatFCFA } from '../../core/currency';
@@ -54,7 +54,7 @@ const AddPlannedModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
             ]}
             style={styles.input}
           />
-          <TextInput
+          <Field
             mode="outlined"
             label="Libellé (ex: Loyer, Salaire, Canal+)"
             value={label}
@@ -62,7 +62,7 @@ const AddPlannedModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
             style={styles.input}
           />
           <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
-          <TextInput
+          <Field
             mode="outlined"
             label="Mots-clés de détection (nom dans le SMS)"
             placeholder="ex: KABORE, CANAL, SONABEL"
@@ -140,7 +140,7 @@ const MatchModal = ({ item, onDismiss }: { item?: PlannedItem; onDismiss: () => 
         <Text variant="titleMedium" style={styles.bold}>
           Quelle opération correspond à « {item.label} » ?
         </Text>
-        <TextInput
+        <Field
           mode="outlined"
           dense
           label="Chercher un nom"

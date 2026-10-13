@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Divider, IconButton, List, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Chip, Divider, IconButton, List, Text } from 'react-native-paper';
+import { Field } from '../components/Field';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
 import { generateId } from '../../core/id';
@@ -107,9 +108,9 @@ export const SettingsScreen = () => {
         <Card style={styles.card}>
           <Card.Title title="Mon budget" />
           <Card.Content>
-            <TextInput mode="outlined" label="Mon prénom" value={name} onChangeText={setName} style={styles.input} />
+            <Field mode="outlined" label="Mon prénom" value={name} onChangeText={setName} style={styles.input} />
             <AmountInput label="Budget mensuel" value={monthly} onChangeText={setMonthly} testID="monthly-budget" />
-            <TextInput
+            <Field
               mode="outlined"
               label="Coefficient week-end (ven. 18h → dim.)"
               value={weekend}
@@ -144,7 +145,7 @@ export const SettingsScreen = () => {
             />
           ))}
           <Card.Content>
-            <TextInput
+            <Field
               mode="outlined"
               dense
               label="Libellé"
@@ -156,7 +157,7 @@ export const SettingsScreen = () => {
               <View style={styles.flex2}>
                 <AmountInput label="Montant" value={fixedAmount} onChangeText={setFixedAmount} />
               </View>
-              <TextInput
+              <Field
                 mode="outlined"
                 label="Jour"
                 value={fixedDay}
@@ -242,7 +243,7 @@ export const SettingsScreen = () => {
               ))}
             </View>
             <View style={styles.row}>
-              <TextInput
+              <Field
                 mode="outlined"
                 dense
                 label="AAAA-MM-JJ"
@@ -250,7 +251,7 @@ export const SettingsScreen = () => {
                 onChangeText={setSpecialDate}
                 style={styles.flex2}
               />
-              <TextInput
+              <Field
                 mode="outlined"
                 dense
                 label="Coef"
@@ -297,7 +298,7 @@ export const SettingsScreen = () => {
               style={styles.input}>
               {smsGranted ? 'Importer les 90 derniers jours' : 'Autoriser et importer'}
             </Button>
-            <TextInput
+            <Field
               mode="outlined"
               dense
               label="Expéditeurs supplémentaires (séparés par des virgules)"
@@ -312,10 +313,11 @@ export const SettingsScreen = () => {
         <Card style={styles.card}>
           <Card.Title title="Tester un SMS" subtitle="Colle un SMS opérateur pour vérifier qu'il est reconnu" />
           <Card.Content>
-            <TextInput
+            <Field
               mode="outlined"
               multiline
               numberOfLines={4}
+              testID="test-sms-input"
               value={testSms}
               onChangeText={setTestSms}
               style={styles.input}
@@ -341,7 +343,7 @@ export const SettingsScreen = () => {
             </View>
             {testResult === null && <Text style={{ color: palette.red }}>SMS non reconnu (ou code de sécurité).</Text>}
             {testResult && (
-              <Text variant="bodySmall" selectable>
+              <Text variant="bodySmall" selectable testID="test-sms-result">
                 {testResult.provider} · {testResult.type} · {formatFCFA(testResult.amount)}
                 {testResult.fee + testResult.tax > 0 ? ` (+${testResult.fee + testResult.tax} frais)` : ''}
                 {testResult.counterpartyName ? ` · ${testResult.counterpartyName}` : ''}
@@ -408,7 +410,7 @@ export const SettingsScreen = () => {
             subtitle={pinEnabled ? 'Activé 🔒 (après 1 min en arrière-plan)' : 'Désactivé'}
           />
           <Card.Content>
-            <TextInput
+            <Field
               mode="outlined"
               dense
               label={pinEnabled ? 'Nouveau code (4 à 6 chiffres)' : 'Code (4 à 6 chiffres)'}

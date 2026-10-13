@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
 import { TextInput } from 'react-native-paper';
+import { Field } from './Field';
 
 interface Props {
   label: string;
@@ -11,10 +12,11 @@ interface Props {
 
 /** Saisie de montant en FCFA (chiffres uniquement). */
 export const AmountInput = ({ label, value, onChangeText, testID }: Props) => (
-  <TextInput
+  <Field
     testID={testID}
     mode="outlined"
     label={label}
+    accessibilityLabel={label}
     value={value}
     keyboardType="number-pad"
     right={<TextInput.Affix text="FCFA" />}

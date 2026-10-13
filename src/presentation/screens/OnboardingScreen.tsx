@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Text, TextInput } from 'react-native-paper';
+import { Button, Text } from 'react-native-paper';
+import { Field } from '../components/Field';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getRepositories } from '../../data/repositories';
 import { ensureNotificationChannels } from '../../services/notifications/NotificationService';
@@ -51,7 +52,7 @@ export const OnboardingScreen = () => {
         <Text style={styles.point}>📶 Tes petites recharges de crédit enfin visibles</Text>
         <Text style={styles.point}>🤝 Dettes, créances et tontines au même endroit</Text>
         <Text style={styles.point}>🔒 Tout reste chiffré sur ton téléphone</Text>
-        <TextInput mode="outlined" label="Ton prénom" value={name} onChangeText={setName} style={styles.input} />
+        <Field mode="outlined" label="Ton prénom" value={name} onChangeText={setName} style={styles.input} />
         <AmountInput label="Ton budget du mois" value={budget} onChangeText={setBudget} testID="onboarding-budget" />
         <Button
           mode="contained"

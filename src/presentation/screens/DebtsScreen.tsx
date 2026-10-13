@@ -1,17 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Alert, FlatList, Linking, ScrollView, StyleSheet, View } from 'react-native';
-import {
-  Button,
-  Card,
-  Chip,
-  FAB,
-  IconButton,
-  Modal,
-  Portal,
-  SegmentedButtons,
-  Text,
-  TextInput,
-} from 'react-native-paper';
+import { Button, Card, Chip, FAB, IconButton, Modal, Portal, SegmentedButtons, Text } from 'react-native-paper';
+import { Field } from '../components/Field';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatFCFA } from '../../core/currency';
 import { dayKey } from '../../core/dates';
@@ -165,8 +155,8 @@ const AddDebtModal = ({
           <Text variant="titleLarge" style={styles.bold}>
             {direction === 'OWED_TO_ME' ? 'Quelqu’un me doit' : 'Je dois'}
           </Text>
-          <TextInput mode="outlined" label="Nom" value={name} onChangeText={setName} style={styles.input} />
-          <TextInput
+          <Field mode="outlined" label="Nom" value={name} onChangeText={setName} style={styles.input} />
+          <Field
             mode="outlined"
             label="Téléphone (WhatsApp)"
             value={phone}
@@ -175,7 +165,7 @@ const AddDebtModal = ({
             style={styles.input}
           />
           <AmountInput label="Montant" value={amount} onChangeText={setAmount} />
-          <TextInput
+          <Field
             mode="outlined"
             label="Échéance (AAAA-MM-JJ)"
             value={due}
@@ -183,7 +173,7 @@ const AddDebtModal = ({
             error={!validDue}
             style={styles.input}
           />
-          <TextInput
+          <Field
             mode="outlined"
             label="Note (ex: prêt pour la scolarité)"
             value={note}
@@ -239,7 +229,7 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
           <Text variant="titleLarge" style={styles.bold}>
             Nouvelle tontine
           </Text>
-          <TextInput
+          <Field
             mode="outlined"
             label="Nom (ex: Tontine du marché)"
             value={name}
@@ -256,7 +246,7 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
             ]}
             style={styles.input}
           />
-          <TextInput
+          <Field
             mode="outlined"
             label="Nombre de membres"
             value={members}
@@ -264,7 +254,7 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
             keyboardType="number-pad"
             style={styles.input}
           />
-          <TextInput
+          <Field
             mode="outlined"
             label="Mon rang de ramassage"
             value={turn}
@@ -272,7 +262,7 @@ const AddTontineModal = ({ visible, onDismiss }: { visible: boolean; onDismiss: 
             keyboardType="number-pad"
             style={styles.input}
           />
-          <TextInput
+          <Field
             mode="outlined"
             label="Date de début (AAAA-MM-JJ)"
             value={start}

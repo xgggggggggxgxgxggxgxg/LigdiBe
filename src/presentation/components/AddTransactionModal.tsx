@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { Button, Modal, Portal, SegmentedButtons, Text, TextInput } from 'react-native-paper';
+import { Button, Modal, Portal, SegmentedButtons, Text } from 'react-native-paper';
+import { Field } from './Field';
 import { CATEGORIES } from '../../core/categories';
 import { CASH_ACCOUNT_ID } from '../../domain/models/Account';
 import { useFinanceStore } from '../store/useFinanceStore';
@@ -62,7 +63,7 @@ export const AddTransactionModal = ({ visible, onDismiss }: Props) => {
             style={styles.block}
           />
           <AmountInput label="Montant" value={amount} onChangeText={setAmount} testID="manual-amount" />
-          <TextInput
+          <Field
             mode="outlined"
             label="Libellé (ex: Maquis, Taxi, Marché)"
             value={label}

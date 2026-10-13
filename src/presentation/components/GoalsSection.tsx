@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, IconButton, Modal, Portal, ProgressBar, Text, TextInput } from 'react-native-paper';
+import { Button, Card, Chip, IconButton, Modal, Portal, ProgressBar, Text } from 'react-native-paper';
+import { Field } from './Field';
 import { formatFCFA } from '../../core/currency';
 import type { SavingsGoal } from '../../domain/models/SavingsGoal';
 import { goalMotivation, goalStatus } from '../../domain/usecases/SavingsGoals';
@@ -75,7 +76,7 @@ export const AddGoalModal = ({ visible, onDismiss }: { visible: boolean; onDismi
               </Chip>
             ))}
           </View>
-          <TextInput
+          <Field
             mode="outlined"
             label="Nom (ex: Mouton de Tabaski)"
             value={name}
@@ -83,7 +84,7 @@ export const AddGoalModal = ({ visible, onDismiss }: { visible: boolean; onDismi
             style={styles.input}
           />
           <AmountInput label="Montant à atteindre" value={target} onChangeText={setTarget} />
-          <TextInput
+          <Field
             mode="outlined"
             label="Échéance (AAAA-MM-JJ, optionnelle)"
             value={deadline}
