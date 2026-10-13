@@ -8,7 +8,7 @@ import notifee, {
 } from '@notifee/react-native';
 import { QUICK_EXPENSE_CATEGORIES } from '../../core/categories';
 import { formatFCFA } from '../../core/currency';
-import { addDays, monthKey } from '../../core/dates';
+import { addDays, formatMonthLabel, monthKey, nextMonthKey, previousMonthKey } from '../../core/dates';
 import type { BudgetConfig } from '../../domain/models/Budget';
 import type { Debt } from '../../domain/models/Debt';
 import { isSpending, type Transaction } from '../../domain/models/Transaction';
@@ -17,6 +17,7 @@ import { summarizeAirtime } from '../../domain/usecases/AirtimeTracker';
 import { calculateDailyBudget } from '../../domain/usecases/CalculateDailyBudget';
 import { counterpartyKey } from '../../domain/usecases/CategorizeTransaction';
 import { envelopeThresholdCrossed } from '../../domain/usecases/CategoryBudgets';
+import { compareMonths, totalFees } from '../../domain/usecases/Statistics';
 import { applyRepayment, debtRemaining, findDebtForTransaction } from '../../domain/usecases/ManageDebts';
 import { LEARNED_CATEGORIES_KEY } from '../../domain/usecases/ProcessIncomingSms';
 
@@ -29,6 +30,8 @@ export const CHANNELS = {
 const ACTION_CATEGORY = 'category:';
 const ACTION_DEBT = 'debt-repay:';
 const MORNING_ID = 'ligdibe-morning';
+const MONTHLY_REPORT_ID = 'ligdibe-monthly-report';
+const FORECAST_REMINDER_ID = 'ligdibe-forecast-reminder';
 const EVENING_ID = 'ligdibe-evening';
 const AIRTIME_ALERT_KEY = (month: string) => `airtimeAlert:${month}`;
 
@@ -163,6 +166,48 @@ export const scheduleDailyReminders = async (
   );
 };
 
+/**
+ * Bilan mensuel (le 1er à 09h00, contenu = mois écoulé) et rappel de préparation
+ * du prévisionnel (le 28 à 19h00). Reprogrammés à chaque ouverture / SMS.
+ */
+export const scheduleMonthlyReminders = async (
+  transactions: ReadonlyArray<Transaction>,
+  now = new Date(),
+): Promise<void> => {
+  const month = monthKey(now);
+  const inMonth = (m: string) => transactions.filter(t => t.occurredAt.startsWith(m));
+  const label = (m: string) => formatMonthLabel(m).split(' ')[0];
+  const cmp = compareMonths(inMonth(month), inMonth(previousMonthKey(month)), label(previousMonthKey(month)));
+  const fees = totalFees(inMonth(month));
+
+  const firstOfNext = new Date(now.getFullYear(), now.getMonth() + 1, 1, 9, 0, 0);
+  await notifee.createTriggerNotification(
+    {
+      id: MONTHLY_REPORT_ID,
+      title: `📊 Ton bilan de ${label(month)} est prêt`,
+      body: `${formatFCFA(cmp.current)} dépensés. ${cmp.message}${
+        fees > 0 ? ` Frais MoMo : ${formatFCFA(fees)}.` : ''
+      }`,
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+    },
+    { type: TriggerType.TIMESTAMP, timestamp: firstOfNext.getTime(), alarmManager: { allowWhileIdle: true } },
+  );
+
+  let reminder = new Date(now.getFullYear(), now.getMonth(), 28, 19, 0, 0);
+  if (reminder.getTime() <= now.getTime()) {
+    reminder = new Date(now.getFullYear(), now.getMonth() + 1, 28, 19, 0, 0);
+  }
+  await notifee.createTriggerNotification(
+    {
+      id: FORECAST_REMINDER_ID,
+      title: `🗓️ Prépare ton prévisionnel de ${label(nextMonthKey(monthKey(reminder)))}`,
+      body: 'Reporte tes lignes récurrentes en un tap et vois si le mois prochain tient la route.',
+      android: { channelId: CHANNELS.REMINDERS, smallIcon: 'ic_launcher', pressAction: { id: 'default' } },
+    },
+    { type: TriggerType.TIMESTAMP, timestamp: reminder.getTime(), alarmManager: { allowWhileIdle: true } },
+  );
+};
+
 /** Notifications et alertes après l'enregistrement d'une transaction SMS. */
 export const notifyAfterRecording = async (
   repos: Repositories,
@@ -230,6 +275,7 @@ export const notifyAfterRecording = async (
     }
   }
   await scheduleDailyReminders(config, transactions, now, paid);
+  await scheduleMonthlyReminders(transactions, now);
 };
 
 /**

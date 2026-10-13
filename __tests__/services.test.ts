@@ -8,6 +8,7 @@ import {
   handleNotificationEvent,
   notifyAfterRecording,
   scheduleDailyReminders,
+  scheduleMonthlyReminders,
 } from '../src/services/notifications/NotificationService';
 import { createInMemoryRepositories, tx } from './helpers/inMemoryRepositories';
 
@@ -27,7 +28,7 @@ describe('Notifications', () => {
       CATEGORIES.GROCERIES,
       CATEGORIES.FOOD,
     ]);
-    expect(notifee.createTriggerNotification).toHaveBeenCalledTimes(2);
+    expect(notifee.createTriggerNotification).toHaveBeenCalledTimes(4);
   });
 
   test('retrait → notification « ajouté à ta Poche » ; revenu → proposition de remboursement de dette', async () => {
@@ -199,5 +200,32 @@ describe('Alerte enveloppe catégorie', () => {
       c => c[0].id === `envelope-${CATEGORIES.FOOD}`,
     );
     expect(alert?.[0].title).toContain('80 %');
+  });
+});
+
+describe('Rappels mensuels', () => {
+  test('bilan le 1er à 9h et rappel prévisionnel le 28 à 19h', async () => {
+    await scheduleMonthlyReminders(
+      [
+        tx({ amount: 880, occurredAt: '2026-10-05T10:00:00' }),
+        tx({ amount: 1000, occurredAt: '2026-09-05T10:00:00' }),
+        tx({ type: 'FEE', amount: 20, occurredAt: '2026-10-05T10:00:00' }),
+      ],
+      NOW,
+    );
+    const [[report, rTrigger], [forecast, fTrigger]] = (notifee.createTriggerNotification as jest.Mock).mock.calls;
+    expect(new Date(rTrigger.timestamp)).toEqual(new Date(2026, 10, 1, 9, 0));
+    expect(report.title).toBe('📊 Ton bilan de octobre est prêt');
+    expect(report.body).toContain('10 % de dépenses en moins');
+    expect(report.body).toContain('Frais MoMo : 20 FCFA');
+    expect(new Date(fTrigger.timestamp)).toEqual(new Date(2026, 9, 28, 19, 0));
+    expect(forecast.title).toContain('novembre');
+
+    jest.clearAllMocks();
+    await scheduleMonthlyReminders([], new Date(2026, 11, 29, 10));
+    const [[r2], [f2, t2]] = (notifee.createTriggerNotification as jest.Mock).mock.calls;
+    expect(r2.body).not.toContain('Frais');
+    expect(new Date(t2.timestamp)).toEqual(new Date(2027, 0, 28, 19, 0));
+    expect(f2.title).toContain('février');
   });
 });

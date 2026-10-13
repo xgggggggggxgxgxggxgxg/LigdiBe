@@ -8,7 +8,11 @@ import { RootNavigator } from './src/presentation/navigation/RootNavigator';
 import { useFinanceStore } from './src/presentation/store/useFinanceStore';
 import { useLockStore } from './src/presentation/store/useLockStore';
 import { theme } from './src/presentation/theme/theme';
-import { handleNotificationEvent, scheduleDailyReminders } from './src/services/notifications/NotificationService';
+import {
+  handleNotificationEvent,
+  scheduleDailyReminders,
+  scheduleMonthlyReminders,
+} from './src/services/notifications/NotificationService';
 import { importSmsBacklog } from './src/services/sms/smsIngestion';
 
 const DAY_MS = 24 * 3600 * 1000;
@@ -29,6 +33,7 @@ const syncOnForeground = async () => {
     await scheduleDailyReminders(s.budgetConfig, s.transactions, new Date(), s.paidFixedExpenseIds).catch(
       () => undefined,
     );
+    await scheduleMonthlyReminders(s.transactions).catch(() => undefined);
   }
 };
 
