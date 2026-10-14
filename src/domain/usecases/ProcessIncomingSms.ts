@@ -230,6 +230,7 @@ export class ProcessIncomingSmsUseCase {
       ? await this.repos.transactions.existsByReference(parsed.provider, parsed.reference)
       : await this.repos.transactions.existsBySmsFingerprint(fingerprint(parsed.rawSms));
     if (duplicate) {
+      await this.refreshBalanceFromDuplicate(parsed, sms.receivedAt ?? new Date());
       return { status: 'DUPLICATE', parsed };
     }
     const learned = await this.repos.settings.getJson<Record<string, string>>(LEARNED_CATEGORIES_KEY, {});
@@ -244,6 +245,23 @@ export class ProcessIncomingSmsUseCase {
     };
     await (this.repos.runInTransaction ? this.repos.runInTransaction(write) : write());
     return { status: 'RECORDED', parsed, entries };
+  }
+
+  /**
+   * Un même dépôt peut produire plusieurs SMS (Ecobank : 3) et seul l'un d'eux
+   * donne le solde : s'il arrive après, on met le solde du compte à jour sans
+   * réenregistrer l'opération.
+   */
+  private async refreshBalanceFromDuplicate(parsed: ParsedSms, receivedAt: Date): Promise<void> {
+    if (parsed.balanceAfter === undefined) {
+      return;
+    }
+    const accounts = await this.repos.accounts.getAll();
+    const account = accounts.find(a => a.id === accountIdForProvider(parsed.provider));
+    const at = parsed.occurredAt ?? toLocalIso(receivedAt);
+    if (account && (!account.updatedAt || at >= account.updatedAt)) {
+      await this.repos.accounts.saveMany([{ ...account, currentBalance: parsed.balanceAfter, updatedAt: at }]);
+    }
   }
 
   /** Conserve un SMS opérateur non analysé (jamais un code de sécurité ni un expéditeur inconnu). */

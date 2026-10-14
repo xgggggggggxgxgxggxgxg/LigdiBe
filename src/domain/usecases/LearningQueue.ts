@@ -76,7 +76,8 @@ export const buildLearningQueue = (
     ALREADY_RECORDED: 0,
     DUPLICATE_IN_INBOX: 0,
   };
-  const seen = new Set<string>();
+  // Clé de déduplication → position dans `items` et présence d'un solde.
+  const seen = new Map<string, { index: number; hasBalance: boolean }>();
   const items: LearningItem[] = [];
   for (const m of messages) {
     if (!isWhitelistedSender(m.sender, extraSenders)) {
@@ -101,11 +102,17 @@ export const buildLearningQueue = (
       excluded.ALREADY_RECORDED++;
       continue;
     }
-    if (seen.has(dedupKey)) {
+    const previous = seen.get(dedupKey);
+    if (previous) {
       excluded.DUPLICATE_IN_INBOX++;
+      // Plusieurs SMS pour une même opération (dépôt Ecobank) : on garde celui qui donne le solde.
+      if (!previous.hasBalance && parsed?.balanceAfter !== undefined) {
+        items[previous.index] = { ...m, id };
+        seen.set(dedupKey, { index: previous.index, hasBalance: true });
+      }
       continue;
     }
-    seen.add(dedupKey);
+    seen.set(dedupKey, { index: items.length, hasBalance: parsed?.balanceAfter !== undefined });
     items.push({ ...m, id });
   }
   return { items, excluded };

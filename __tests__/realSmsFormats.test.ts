@@ -379,3 +379,118 @@ describe('Étape 3 — Moov Money (formats réels)', () => {
     ).toMatchObject({ type: 'AIRTIME_RECHARGE', amount: 550, balanceAfter: 11856 });
   });
 });
+
+const eco = (sms: string) => parseTransactionSms(sms, { sender: 'ECOBANK' });
+const DEPOT_1 =
+  'Cher JEANNE KABORE, vous venez de deposer XOF4,900 sur le compte xxxx1001 au Point Xpress 32645802162 CELESATECH NAR:DEPOT SUR COMPTE. REF:A262800199810422';
+const DEPOT_2 =
+  'XOF 4,900.00 Crédit au ac XX491001 REF:N18lrbg262800003 REF:A262800199810422 Encaisse du debit XOF4,900 a/c xxxx1001 par JEANNE KABORE B/O NAR: DEPOT SUR COMPTE a 32645802162 CELESATECH 07-Oct-26 et solde disponible XOF on 07-OCT-26. Votre solde disponible est XOF 5,131.00.';
+const DEPOT_3 =
+  'Cher Jeanne  Kabore a depose XOF4,900 sur votre compte xxxx1001 le 07-OCT-2026 au Point Xpress 32645802162 CELESATECH. REF:A262800199810422 NAR:DEPOT SUR COMPTE';
+
+describe('Étape 4 — Ecobank (formats réels)', () => {
+  test('crédit « DEPOT SUR COMPTE » : dépôt Poche → banque, solde, REF partagée', () => {
+    expect(eco(DEPOT_2)).toMatchObject({
+      provider: 'ECOBANK',
+      type: 'AGENT_DEPOSIT',
+      amount: 4900,
+      balanceAfter: 5131,
+      reference: 'A262800199810422',
+      counterpartyName: 'CELESATECH',
+      ruleId: 'ECOBANK_ACCOUNT_MOVEMENT',
+    });
+    expect(eco(DEPOT_1)).toMatchObject({
+      type: 'AGENT_DEPOSIT',
+      amount: 4900,
+      reference: 'A262800199810422',
+      counterpartyName: 'CELESATECH',
+    });
+    expect(eco(DEPOT_3)).toMatchObject({ type: 'AGENT_DEPOSIT', amount: 4900, reference: 'A262800199810422' });
+    expect(
+      eco(
+        'Cher Jeanne  Kabore a depose XOF1,000,000 sur votre compte xxxx1001 le 12-OCT-2026 au Point Xpress 32645802162 CELESATECH. REF:A262850200150304 NAR:DEPOT SUR COMPTE',
+      ),
+    ).toMatchObject({ amount: 1000000 });
+  });
+
+  test('débits « Virtual Card Funding » (référence unique par débit) et autre crédit', () => {
+    expect(
+      eco(
+        'XOF 995,000.00 Débit du ac XX491001 REF:820vwof262860002 REF:6038852221264926 B/O Virtual Card Funding IFO Jeanne Kabore (26000000) on 13-OCT-26. Votre solde disponible est XOF 13,355.00.',
+      ),
+    ).toMatchObject({
+      type: 'EXPENSE',
+      amount: 995000,
+      balanceAfter: 13355,
+      reference: '820vwof262860002',
+      counterpartyName: 'Carte virtuelle',
+    });
+    expect(
+      eco(
+        'XOF 8.00 Débit du ac XX491001 REF:820cixz262800006 REF:5543398476701080 B/O Virtual Card Funding IFO X on 07-OCT-26. Votre solde disponible est XOF 578.00.',
+      ),
+    ).toMatchObject({ amount: 8, reference: '820cixz262800006' });
+    expect(
+      eco(
+        'XOF 50,000.00 Crédit au ac XX491001 REF:N18aaaa262800001 B/O NAR: VIREMENT SALAIRE. Votre solde disponible est XOF 60,000.00.',
+      ),
+    ).toMatchObject({
+      type: 'INCOME',
+      amount: 50000,
+      counterpartyName: 'VIREMENT SALAIRE',
+      reference: 'N18aaaa262800001',
+    });
+    expect(
+      eco('XOF 1,000.00 Crédit au ac XX491001 REF:N18bbbb262800001 Votre solde disponible est XOF 2,000.00.')
+        ?.counterpartyName,
+    ).toBeUndefined();
+  });
+
+  test('promos et notifications Ecobank : ignorées', () => {
+    expect(
+      eco(
+        'Cher client ! Ouvrez Ecobank Mobile, cliquez sur PI-SPI, creez votre alias pour recevoir ou envoyer de l argent sans frais au Burkina et a 1% dans l UEMOA.',
+      ),
+    ).toBeNull();
+    expect(
+      eco(
+        'A new device Android-15-Phone just signed in to your profile . You are getting this to make sure it is you.',
+      ),
+    ).toBeNull();
+    expect(eco('Bonjour Jeanne Kabore, Nous ne pouvons pas traiter votre demande pour le moment. .')).toBeNull();
+  });
+
+  test('apprentissage guidé : 3 SMS du même dépôt → 1 seul, celui qui donne le solde', () => {
+    const { buildLearningQueue } = require('../src/domain/usecases/LearningQueue');
+    const at = (body: string, min: number) => ({ sender: 'ECOBANK', body, receivedAt: `2026-10-07T15:5${min}:00` });
+    const { items, excluded } = buildLearningQueue([at(DEPOT_1, 1), at(DEPOT_2, 2), at(DEPOT_3, 3)], {
+      fingerprints: new Set(),
+      references: new Set(),
+    });
+    expect(items.map((i: { body: string }) => i.body)).toEqual([DEPOT_2]);
+    expect(excluded.DUPLICATE_IN_INBOX).toBe(2);
+  });
+
+  test('temps réel : le SMS avec solde arrivé après met le solde à jour sans doublon', async () => {
+    const { ProcessIncomingSmsUseCase } = require('../src/domain/usecases/ProcessIncomingSms');
+    const { createInMemoryRepositories } = require('./helpers/inMemoryRepositories');
+    const repos = createInMemoryRepositories();
+    const uc = new ProcessIncomingSmsUseCase(repos);
+    expect(
+      (await uc.execute({ body: DEPOT_1, sender: 'ECOBANK', receivedAt: new Date(2026, 9, 7, 15, 52) })).status,
+    ).toBe('RECORDED');
+    const bank = async () => (await repos.accounts.getAll()).find((a: { id: string }) => a.id === 'ecobank-account');
+    expect((await bank()).currentBalance).toBe(4900);
+    expect(
+      (await uc.execute({ body: DEPOT_2, sender: 'ECOBANK', receivedAt: new Date(2026, 9, 7, 15, 53) })).status,
+    ).toBe('DUPLICATE');
+    expect((await bank()).currentBalance).toBe(5131);
+    expect(
+      (await uc.execute({ body: DEPOT_3, sender: 'ECOBANK', receivedAt: new Date(2026, 9, 7, 15, 54) })).status,
+    ).toBe('DUPLICATE');
+    expect((await bank()).currentBalance).toBe(5131);
+    expect(
+      (await repos.transactions.listAll()).filter((t: { type: string }) => t.type === 'AGENT_DEPOSIT'),
+    ).toHaveLength(1);
+  });
+});

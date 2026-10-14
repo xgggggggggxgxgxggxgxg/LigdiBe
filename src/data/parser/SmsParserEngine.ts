@@ -114,6 +114,9 @@ export const cleanMerchantName = (value: string): string => {
   }
   return words.join(' ');
 };
+/** Ecobank : la devise précède le montant (« XOF 4,900.00 », « XOF1,000,000 »). */
+const ECO_AMT = 'XOF\\s?(\\d[\\d.,]*\\d|\\d)';
+const ecoBalance = (s: string) => parseAmount(field(s, new RegExp(`solde disponible est ${ECO_AMT}`, 'i')));
 const FEES_TAX = `(?:,\\s*Frais\\s*:\\s*${OPT_AMT}${CUR},\\s*Taxe\\s*:\\s*${OPT_AMT}${CUR})?`;
 
 // ---------- Champs communs Wave / UBA ----------
@@ -560,6 +563,49 @@ const RULES: ReadonlyArray<ParserRule> = [
         occurredAt: moovDate(s),
       };
     },
+  },
+
+  // ===================== ECOBANK (formats réels, devise avant le montant) =====================
+  {
+    // « XOF 4,900.00 Crédit au ac XX491001 REF:N18… REF:A2628… … NAR: DEPOT SUR COMPTE … Votre solde disponible est XOF 5,131.00. »
+    // « XOF 8.00 Débit du ac XX491001 REF:820… REF:5543… B/O Virtual Card Funding … Votre solde disponible est XOF 578.00. »
+    id: 'ECOBANK_ACCOUNT_MOVEMENT',
+    provider: 'ECOBANK',
+    pattern: new RegExp(`^\\s*${ECO_AMT}\\s+(Cr[ée]dit au|D[ée]bit du) ac\\b`, 'i'),
+    build: (m, s) => {
+      const credit = /^cr/i.test(m[2]);
+      const deposit = /NAR\s*:\s*DEPOT SUR COMPTE/i.test(s);
+      const label = /Virtual Card Funding/i.test(s)
+        ? 'Carte virtuelle'
+        : deposit
+        ? field(s, /\ba \d{6,} ([A-Z][A-Z0-9 ]+?) \d{2}-/i) ?? 'Dépôt sur compte'
+        : cleanName(field(s, /NAR\s*:\s*([^\n.]+?)(?: a \d|\.|$)/i) ?? '') || undefined;
+      return {
+        type: credit ? (deposit ? 'AGENT_DEPOSIT' : 'INCOME') : 'EXPENSE',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyName: label,
+        merchantOrRecipient: label,
+        balanceAfter: ecoBalance(s),
+        // Le REF « A… » est commun aux 3 SMS d'un même dépôt ; sinon le premier REF est unique.
+        reference: field(s, /REF\s*:\s*(A\d{10,})/i) ?? field(s, /REF\s*:\s*([A-Za-z0-9]+)/i),
+      };
+    },
+  },
+  {
+    // « Cher NOM, vous venez de deposer XOF4,900 sur le compte xxxx1001 au Point Xpress 326… CELESATECH NAR:… REF:A… »
+    // « Cher NOM a depose XOF1,000,000 sur votre compte xxxx1001 le 12-OCT-2026 au Point Xpress 326… CELESATECH. REF:A… »
+    id: 'ECOBANK_XPRESS_DEPOSIT',
+    provider: 'ECOBANK',
+    pattern: new RegExp(
+      `(?:vous venez de d[ée]poser|a d[ée]pos[ée])\\s+${ECO_AMT}\\s+sur (?:le|votre) compte[^\\n]*?Point Xpress \\d+ ([A-Z][A-Z0-9 ]*?)(?:\\s+NAR|\\.|$)`,
+      'i',
+    ),
+    build: (m, s) => ({
+      type: 'AGENT_DEPOSIT',
+      amount: parseAmountOrZero(m[1]),
+      counterpartyName: cleanName(m[2]),
+      reference: field(s, /REF\s*:\s*(A\d{10,})/i),
+    }),
   },
 
   // ===================== BANQUES (Ecobank, Coris, SGBF, BOA…) =====================
