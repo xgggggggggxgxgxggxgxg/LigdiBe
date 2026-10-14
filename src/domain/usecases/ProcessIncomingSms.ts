@@ -22,7 +22,7 @@ export interface LedgerEntries {
   accounts: Account[];
 }
 
-const PROVIDER_LABELS: Record<Provider, string> = {
+export const PROVIDER_LABELS: Record<Provider, string> = {
   MOOV: 'Moov Money',
   ORANGE: 'Orange Money',
   UBA_WAVE: 'Wave / UBA',

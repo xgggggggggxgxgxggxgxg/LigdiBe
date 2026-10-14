@@ -15,6 +15,7 @@
 | Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |
 | Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, solidarité familiale (montant, proches aidés, part des entrées), répartition par catégorie, bilan partageable. |
 | Dépôt chez un agent | Poche débitée, MoMo crédité : ni revenu ni dépense. |
+| Comparateur de frais | « Combien ça coûte ? » : frais estimés par opérateur (envoi, retrait, paiement) d'après tes propres SMS, opérateur le moins cher et économie possible du mois. |
 | Enveloppes | Plafonds mensuels par catégorie, alerte à 80 % et 100 %. |
 | Récurrences | Détection automatique des opérations mensuelles (abonnements, loyer, salaire) proposées au prévisionnel. |
 | Épargne | Objectifs (Tabaski, rentrée, moto…) avec effort quotidien/hebdomadaire et suivi du rythme. |

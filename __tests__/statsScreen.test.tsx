@@ -36,6 +36,9 @@ test('Stats : top destinataires, frais, comparaison et navigation entre mois', a
   );
   await waitFor(() => expect(screen.getByText('1. ALI')).toBeTruthy());
   expect(screen.getByTestId('fees-tile')).toHaveTextContent(/75 FCFA/);
+  expect(screen.getByTestId('fee-comparator-card')).toHaveTextContent(/Comparateur de frais/);
+  fireEvent.press(screen.getByTestId('open-fee-comparator'));
+  expect(await screen.findByTestId('fee-amount')).toBeTruthy();
   expect(screen.getByTestId('family-tile')).toHaveTextContent(/3 000 FCFA.*10 % des entrées/);
   expect(screen.getByTestId('month-comparison')).toHaveTextContent(/19 % de dépenses en plus qu'en septembre/);
 

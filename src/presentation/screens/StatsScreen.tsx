@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
-import { Button, Card, IconButton, List, ProgressBar, Text } from 'react-native-paper';
+import { Avatar, Button, Card, IconButton, List, ProgressBar, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import { formatMonthLabel, monthKey, nextMonthKey, previousMonthKey } from '../../core/dates';
@@ -17,6 +17,8 @@ import {
   totalFees,
 } from '../../domain/usecases/Statistics';
 import { exportJsonBackup, exportTransactionsCsv } from '../../services/export/ExportService';
+import { potentialSavings } from '../../domain/usecases/FeeComparator';
+import { FeeComparatorModal } from '../components/FeeComparatorModal';
 import { StatTile } from '../components/StatTile';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
@@ -54,6 +56,8 @@ export const StatsScreen = () => {
   const insights = useMemo(() => buildInsights(monthTxs), [monthTxs]);
   const family = useMemo(() => familySupport(monthTxs), [monthTxs]);
   const fees = totalFees(monthTxs);
+  const savings = useMemo(() => potentialSavings(monthTxs, transactions), [monthTxs, transactions]);
+  const [comparing, setComparing] = useState(false);
   const airtime = totalAirtime(monthTxs);
 
   const runExport = async (kind: 'csv' | 'json') => {
@@ -131,6 +135,27 @@ export const StatsScreen = () => {
           />
         </View>
 
+        <Card style={styles.card} testID="fee-comparator-card">
+          <Card.Title
+            title="Comparateur de frais"
+            subtitle={
+              savings > 0
+                ? `Économie possible ce mois : ${formatFCFA(savings)}`
+                : 'Quel opérateur est le moins cher pour toi ?'
+            }
+            left={props => <Avatar.Icon {...props} icon="scale-balance" />}
+          />
+          <Card.Actions>
+            <Button
+              icon="calculator-variant-outline"
+              mode="contained-tonal"
+              onPress={() => setComparing(true)}
+              testID="open-fee-comparator">
+              Simuler
+            </Button>
+          </Card.Actions>
+        </Card>
+
         <Card style={styles.card}>
           <Card.Title title="Top 5 : à qui j'envoie le plus" />
           {top.length === 0 && <Text style={styles.empty}>Pas encore de transferts ce mois-ci.</Text>}
@@ -196,6 +221,7 @@ export const StatsScreen = () => {
           </Card.Actions>
         </Card>
       </ScrollView>
+      <FeeComparatorModal visible={comparing} onDismiss={() => setComparing(false)} />
     </Screen>
   );
 };
