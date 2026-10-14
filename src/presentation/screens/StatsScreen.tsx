@@ -9,6 +9,7 @@ import { getRepositories } from '../../data/repositories';
 import {
   buildInsights,
   compareMonths,
+  familySupport,
   spendingByCategory,
   topRecipients,
   totalAirtime,
@@ -51,6 +52,7 @@ export const StatsScreen = () => {
   const top = useMemo(() => topRecipients(monthTxs, 5), [monthTxs]);
   const categories = useMemo(() => spendingByCategory(monthTxs).slice(0, 8), [monthTxs]);
   const insights = useMemo(() => buildInsights(monthTxs), [monthTxs]);
+  const family = useMemo(() => familySupport(monthTxs), [monthTxs]);
   const fees = totalFees(monthTxs);
   const airtime = totalAirtime(monthTxs);
 
@@ -114,6 +116,18 @@ export const StatsScreen = () => {
             label="Retiré en espèces"
             value={formatFCFA(totalCashWithdrawn(monthTxs))}
             hint="Non compté en dépense"
+          />
+          <StatTile
+            testID="family-tile"
+            icon="hand-heart-outline"
+            label="Solidarité famille"
+            value={formatFCFA(family.total)}
+            hint={
+              family.shareOfIncome > 0
+                ? `${Math.round(family.shareOfIncome * 100)} % des entrées`
+                : `${family.people} proche(s)`
+            }
+            color={palette.gold}
           />
         </View>
 

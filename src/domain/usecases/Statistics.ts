@@ -61,6 +61,27 @@ export const spendingByCategory = (transactions: ReadonlyArray<Transaction>): Ca
 export const totalCashWithdrawn = (transactions: ReadonlyArray<Transaction>): number =>
   transactions.filter(t => t.type === 'CASH_WITHDRAWAL').reduce((s, t) => s + t.amount, 0);
 
+export interface FamilySupport {
+  total: number;
+  count: number;
+  /** Nombre de proches distincts aidés. */
+  people: number;
+  /** Part des entrées du mois consacrée à la famille (0 sans entrée). */
+  shareOfIncome: number;
+}
+
+/**
+ * Solidarité familiale : envois classés « Famille & Solidarité » (la catégorie est
+ * apprise par contact, donc un proche reclassé une fois l'est pour la suite).
+ */
+export const familySupport = (transactions: ReadonlyArray<Transaction>): FamilySupport => {
+  const family = transactions.filter(t => isSpending(t) && t.category === CATEGORIES.FAMILY);
+  const total = family.reduce((s, t) => s + t.amount, 0);
+  const income = transactions.filter(t => t.type === 'INCOME').reduce((s, t) => s + t.amount, 0);
+  const people = new Set(family.map(t => (t.counterpartyPhone ?? t.counterpartyName ?? t.id).toUpperCase())).size;
+  return { total, count: family.length, people, shareOfIncome: income > 0 ? total / income : 0 };
+};
+
 export interface Insight {
   id: string;
   message: string;
@@ -86,6 +107,16 @@ export const buildInsights = (monthTransactions: ReadonlyArray<Transaction>): In
     insights.push({
       id: 'top-category',
       message: `Ton premier poste de dépense : ${top.category} (${Math.round(top.share * 100)} %).`,
+    });
+  }
+  const family = familySupport(monthTransactions);
+  if (family.total > 0) {
+    const share = family.shareOfIncome > 0 ? ` (${Math.round(family.shareOfIncome * 100)} % de tes entrées)` : '';
+    insights.push({
+      id: 'family',
+      message: `🤝🏾 Tu as soutenu ${family.people} proche${family.people > 1 ? 's' : ''} : ${Math.round(
+        family.total,
+      )} FCFA${share}.`,
     });
   }
   return insights;

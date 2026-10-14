@@ -13,7 +13,7 @@
 | Budget du jour | `(budget disponible − charges fixes) / jours restants` pondéré : ven. 18h → dim. ×1,5 (paramétrable), jours spéciaux (Tabaski…). Série de jours sous budget 🔥. |
 | Prévisionnel | Gains & dépenses prévus, coche automatique via le nom dans le SMS, sélection manuelle, report au mois suivant. |
 | Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |
-| Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, répartition par catégorie, bilan partageable. |
+| Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, solidarité familiale (montant, proches aidés, part des entrées), répartition par catégorie, bilan partageable. |
 | Dépôt chez un agent | Poche débitée, MoMo crédité : ni revenu ni dépense. |
 | Enveloppes | Plafonds mensuels par catégorie, alerte à 80 % et 100 %. |
 | Récurrences | Détection automatique des opérations mensuelles (abonnements, loyer, salaire) proposées au prévisionnel. |
