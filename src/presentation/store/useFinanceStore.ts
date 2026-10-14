@@ -22,6 +22,13 @@ import {
   type ProcessSmsResult,
 } from '../../domain/usecases/ProcessIncomingSms';
 import { UNRECOGNIZED_SMS_KEY, type UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
+import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import {
+  decideRequest,
+  FAMILY_REQUESTS_KEY,
+  SOLIDARITY_BUDGET_KEY,
+  type ReplyKind,
+} from '../../domain/usecases/FamilySolidarity';
 
 const PAID_FIXED_KEY = (month: string) => `paidFixed:${month}`;
 const ONBOARDED_KEY = 'onboarded';
@@ -61,6 +68,9 @@ export interface FinanceState {
   themeMode: ThemeMode;
   /** SMS opérateur au format inconnu, en attente de saisie manuelle. */
   unrecognizedSms: UnrecognizedSms[];
+  familyRequests: FamilyRequest[];
+  /** Budget solidarité mensuel (0 = non défini). */
+  solidarityBudget: number;
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -101,6 +111,17 @@ export interface FinanceState {
   /** Transforme un SMS non reconnu en opération manuelle puis le retire de la file. */
   resolveUnrecognizedSms(smsId: string, input: ManualTransactionInput): Promise<Transaction>;
   dismissUnrecognizedSms(smsId: string): Promise<void>;
+
+  saveFamilyRequest(
+    input: Pick<FamilyRequest, 'contactName' | 'amount'> & Partial<Pick<FamilyRequest, 'phone' | 'reason' | 'id'>>,
+  ): Promise<void>;
+  /**
+   * Décide d'une demande. Pour un don : `accountId` crée la dépense (espèces…) ;
+   * sans compte, l'envoi MoMo récent du même montant est rattaché et reclassé « Famille ».
+   */
+  decideFamilyRequest(requestId: string, kind: ReplyKind, givenAmount?: number, accountId?: string): Promise<void>;
+  deleteFamilyRequest(requestId: string): Promise<void>;
+  setSolidarityBudget(amount: number): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -150,6 +171,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     extraSenders: [],
     themeMode: 'system',
     unrecognizedSms: [],
+    familyRequests: [],
+    solidarityBudget: 0,
 
     async hydrate(now = new Date()) {
       try {
@@ -170,6 +193,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           savingsGoals,
           themeMode,
           unrecognizedSms,
+          familyRequests,
+          solidarityBudget,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -185,6 +210,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.savingsGoals.getAll(),
           r.settings.getJson<ThemeMode>(THEME_KEY, 'system'),
           r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []),
+          r.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
+          r.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
         ]);
         set({
           ready: true,
@@ -204,6 +231,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           savingsGoals,
           themeMode,
           unrecognizedSms,
+          familyRequests,
+          solidarityBudget,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -514,6 +543,70 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const unrecognizedSms = get().unrecognizedSms.filter(u => u.id !== smsId);
       await r.settings.setJson(UNRECOGNIZED_SMS_KEY, unrecognizedSms);
       set({ unrecognizedSms });
+    },
+
+    async saveFamilyRequest(input) {
+      const r = await repos();
+      const existing = get().familyRequests.find(f => f.id === input.id);
+      const request: FamilyRequest = {
+        status: 'PENDING',
+        givenAmount: 0,
+        createdAt: toLocalIso(new Date()),
+        ...existing,
+        ...input,
+        id: input.id ?? generateId('fam'),
+      };
+      const familyRequests = [request, ...get().familyRequests.filter(f => f.id !== request.id)];
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async decideFamilyRequest(requestId, kind, givenAmount = 0, accountId) {
+      const r = await repos();
+      const request = get().familyRequests.find(f => f.id === requestId);
+      if (!request) {
+        return;
+      }
+      const now = new Date();
+      let decided = decideRequest(request, kind, givenAmount, toLocalIso(now));
+      if (decided.givenAmount > 0) {
+        if (accountId) {
+          const tx = await get().addManualTransaction({
+            accountId,
+            type: 'EXPENSE',
+            amount: decided.givenAmount,
+            category: CATEGORIES.FAMILY,
+            counterpartyName: request.contactName,
+            note: request.reason,
+          });
+          decided = { ...decided, transactionId: tx.id };
+        } else {
+          const since = toLocalIso(new Date(now.getTime() - 3 * 24 * 3600 * 1000));
+          const sent = get()
+            .transactions.filter(t => t.type === 'EXPENSE' && t.amount === decided.givenAmount && t.occurredAt >= since)
+            .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+          if (sent) {
+            await get().recategorize(sent.id, CATEGORIES.FAMILY, true);
+            decided = { ...decided, transactionId: sent.id };
+          }
+        }
+      }
+      const familyRequests = get().familyRequests.map(f => (f.id === requestId ? decided : f));
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async deleteFamilyRequest(requestId) {
+      const r = await repos();
+      const familyRequests = get().familyRequests.filter(f => f.id !== requestId);
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async setSolidarityBudget(amount) {
+      const r = await repos();
+      await r.settings.setJson(SOLIDARITY_BUDGET_KEY, amount);
+      set({ solidarityBudget: amount });
     },
 
     async setExtraSenders(senders) {

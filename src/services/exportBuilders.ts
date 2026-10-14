@@ -1,3 +1,4 @@
+import type { FamilyRequest } from '../domain/models/FamilyRequest';
 import type { Account } from '../domain/models/Account';
 import type { Debt } from '../domain/models/Debt';
 import type { PlannedItem } from '../domain/models/PlannedItem';
@@ -55,6 +56,8 @@ export interface BackupSnapshot {
   tontines?: Tontine[];
   savingsGoals?: SavingsGoal[];
   budgetConfig?: BudgetConfig;
+  familyRequests?: FamilyRequest[];
+  solidarityBudget?: number;
 }
 
 export const buildJsonBackup = (data: Omit<BackupSnapshot, 'app' | 'version'>): string =>

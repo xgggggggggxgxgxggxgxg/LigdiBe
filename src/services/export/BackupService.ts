@@ -1,5 +1,7 @@
 import RNFS from 'react-native-fs';
+import type { FamilyRequest } from '../../domain/models/FamilyRequest';
 import type { Repositories } from '../../domain/repositories';
+import { FAMILY_REQUESTS_KEY, SOLIDARITY_BUDGET_KEY } from '../../domain/usecases/FamilySolidarity';
 import { parseJsonBackup, type BackupSnapshot } from '../exportBuilders';
 
 export interface BackupFile {
@@ -54,6 +56,17 @@ export const restoreBackup = async (repos: Repositories, snapshot: BackupSnapsho
     }
     if (snapshot.budgetConfig) {
       await repos.settings.saveBudgetConfig(snapshot.budgetConfig);
+    }
+    if (snapshot.familyRequests?.length) {
+      const current = await repos.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []);
+      const restored = snapshot.familyRequests;
+      await repos.settings.setJson(FAMILY_REQUESTS_KEY, [
+        ...restored,
+        ...current.filter(c => !restored.some(f => f.id === c.id)),
+      ]);
+    }
+    if (typeof snapshot.solidarityBudget === 'number') {
+      await repos.settings.setJson(SOLIDARITY_BUDGET_KEY, snapshot.solidarityBudget);
     }
   });
   return {

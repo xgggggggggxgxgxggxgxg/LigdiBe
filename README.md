@@ -13,6 +13,7 @@
 | Budget du jour | `(budget disponible − charges fixes) / jours restants` pondéré : ven. 18h → dim. ×1,5 (paramétrable), jours spéciaux (Tabaski…). Série de jours sous budget 🔥. |
 | Prévisionnel | Gains & dépenses prévus, coche automatique via le nom dans le SMS, sélection manuelle, report au mois suivant. |
 | Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |
+| Famille | Demandes d'argent des proches, budget solidarité mensuel, montant conseillé, réponses courtoises pré-rédigées (tout / une partie / plus tard / non) par WhatsApp ou SMS ; l'envoi MoMo détecté est rattaché et classé « Famille ». |
 | Statistiques | Top 5 destinataires, frais MoMo du mois, crédit d'appel, solidarité familiale (montant, proches aidés, part des entrées), répartition par catégorie, bilan partageable. |
 | Dépôt chez un agent | Poche débitée, MoMo crédité : ni revenu ni dépense. |
 | Comparateur de frais | « Combien ça coûte ? » : frais estimés par opérateur (envoi, retrait, paiement) d'après tes propres SMS, opérateur le moins cher et économie possible du mois. |

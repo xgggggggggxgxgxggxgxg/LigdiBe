@@ -3,6 +3,8 @@ import RNFS from 'react-native-fs';
 import { fileTimestamp, nextMonthKey, toLocalIso } from '../../core/dates';
 import type { Repositories } from '../../domain/repositories';
 import { buildJsonBackup, transactionsToCsv } from '../exportBuilders';
+import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import { FAMILY_REQUESTS_KEY, SOLIDARITY_BUDGET_KEY } from '../../domain/usecases/FamilySolidarity';
 
 export interface ExportResult {
   path: string;
@@ -46,7 +48,18 @@ export const exportTransactionsCsv = async (repos: Repositories, now = new Date(
 
 /** Sauvegarde complète JSON (comptes, transactions, dettes, prévisionnel, tontines, objectifs, budget). */
 export const exportJsonBackup = async (repos: Repositories, month: string, now = new Date()): Promise<ExportResult> => {
-  const [accounts, transactions, debts, current, next, tontines, savingsGoals, budgetConfig] = await Promise.all([
+  const [
+    accounts,
+    transactions,
+    debts,
+    current,
+    next,
+    tontines,
+    savingsGoals,
+    budgetConfig,
+    familyRequests,
+    solidarityBudget,
+  ] = await Promise.all([
     repos.accounts.getAll(),
     repos.transactions.listAll(),
     repos.debts.getAll(),
@@ -55,6 +68,8 @@ export const exportJsonBackup = async (repos: Repositories, month: string, now =
     repos.tontines.getAll(),
     repos.savingsGoals.getAll(),
     repos.settings.getBudgetConfig(),
+    repos.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
+    repos.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
   ]);
   const json = buildJsonBackup({
     exportedAt: toLocalIso(now),
@@ -65,6 +80,8 @@ export const exportJsonBackup = async (repos: Repositories, month: string, now =
     tontines,
     savingsGoals,
     budgetConfig,
+    familyRequests,
+    solidarityBudget,
   });
   const path = await writeWithFallback(`LigdiBe_sauvegarde_${fileTimestamp(now)}.json`, json);
   return { path, count: transactions.length };

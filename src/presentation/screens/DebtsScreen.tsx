@@ -16,12 +16,21 @@ import {
 } from '../../domain/usecases/ManageDebts';
 import { tontineStatus } from '../../domain/usecases/TontineTracker';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
+import { AddFamilyRequestModal, FamilySection } from '../components/FamilySection';
 import { AddGoalModal, GoalsList } from '../components/GoalsSection';
 import { StatTile } from '../components/StatTile';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
 
-type Tab = DebtDirection | 'TONTINE' | 'GOALS';
+type Tab = DebtDirection | 'FAMILY' | 'TONTINE' | 'GOALS';
+
+const TABS: ReadonlyArray<{ value: Tab; label: string; icon: string }> = [
+  { value: 'OWED_TO_ME', label: 'Me doit', icon: 'hand-coin-outline' },
+  { value: 'OWED_BY_ME', label: 'Je dois', icon: 'hand-extended-outline' },
+  { value: 'FAMILY', label: 'Famille', icon: 'hand-heart-outline' },
+  { value: 'TONTINE', label: 'Tontines', icon: 'account-group-outline' },
+  { value: 'GOALS', label: 'Épargne', icon: 'piggy-bank-outline' },
+];
 
 const openUrl = async (url: string, fallback?: string) => {
   try {
@@ -304,19 +313,28 @@ export const DebtsScreen = () => {
         <StatTile icon="hand-coin" label="On me doit" value={formatFCFA(summary.owedToMe)} color={palette.green} />
         <StatTile icon="hand-extended" label="Je dois" value={formatFCFA(summary.owedByMe)} color={palette.red} />
       </View>
-      <SegmentedButtons
-        value={tab}
-        onValueChange={v => setTab(v as Tab)}
-        style={styles.segment}
-        buttons={[
-          { value: 'OWED_TO_ME', label: 'Me doit' },
-          { value: 'OWED_BY_ME', label: 'Je dois' },
-          { value: 'TONTINE', label: 'Tontines' },
-          { value: 'GOALS', label: 'Épargne' },
-        ]}
-      />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabs}
+        style={styles.tabsBar}>
+        {TABS.map(t => (
+          <Chip
+            key={t.value}
+            icon={t.icon}
+            selected={tab === t.value}
+            showSelectedOverlay
+            onPress={() => setTab(t.value)}
+            style={styles.tab}
+            testID={`tab-${t.value}`}>
+            {t.label}
+          </Chip>
+        ))}
+      </ScrollView>
       {tab === 'GOALS' ? (
         <GoalsList />
+      ) : tab === 'FAMILY' ? (
+        <FamilySection />
       ) : tab === 'TONTINE' ? (
         <FlatList
           data={tontines}
@@ -343,6 +361,8 @@ export const DebtsScreen = () => {
       <FAB icon="plus" style={styles.fab} onPress={() => setAdding(true)} testID="fab-debt" />
       {tab === 'GOALS' ? (
         <AddGoalModal visible={adding} onDismiss={() => setAdding(false)} />
+      ) : tab === 'FAMILY' ? (
+        <AddFamilyRequestModal visible={adding} onDismiss={() => setAdding(false)} />
       ) : tab === 'TONTINE' ? (
         <AddTontineModal visible={adding} onDismiss={() => setAdding(false)} />
       ) : (
@@ -355,7 +375,9 @@ export const DebtsScreen = () => {
 const styles = StyleSheet.create({
   title: { marginHorizontal: 16, marginTop: 12, fontWeight: '800' },
   tiles: { flexDirection: 'row', gap: 10, margin: 16 },
-  segment: { marginHorizontal: 16 },
+  tabsBar: { flexGrow: 0 },
+  tabs: { paddingHorizontal: 16, gap: 8 },
+  tab: { marginRight: 2 },
   list: { padding: 16, paddingBottom: 96 },
   card: { marginBottom: 12 },
   settled: { opacity: 0.6 },
