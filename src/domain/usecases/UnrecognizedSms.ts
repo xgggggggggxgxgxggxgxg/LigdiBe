@@ -1,4 +1,5 @@
 import { fingerprint } from '../../core/id';
+import { isInformationalSms } from '../../data/parser/informationalFilters';
 import { normalizeSms, parseAmount } from '../../data/parser/textUtils';
 
 /**
@@ -24,12 +25,15 @@ const AMOUNT_WITH_CURRENCY = /(\d[\d .,]*)\s*(?:FCFA|F\s?CFA|XOF|XAF|F)\b/i;
 const MONEY_KEYWORDS =
   /\b(?:re[çc]u|envoy[ée]|transf[ée]r|paiement|pay[ée]|retir[ée]|retrait|d[ée]p[ôo]t|d[ée]bit[ée]?|cr[ée]dit[ée]?|solde|montant|achat|facture)/i;
 /** Messages promotionnels : un montant y figure souvent sans opération réelle. */
-const PROMO_KEYWORDS = /\b(?:gagnez|promo|offre|bonus de|tentez|jeu concours|profitez|composez le|tapez \*)/i;
+const PROMO_KEYWORDS =
+  /\b(?:gagnez|gagner|promo|offre|bonus de|tentez|remporter|jeu concours|profitez|composez le|tapez \*|cliquez|stop sms|qui co[uû]te)/i;
 
 /** Un SMS ressemble à une opération financière : un montant en devise + un verbe d'opération, sans promo. */
 export const looksLikeFinancialSms = (body: string): boolean => {
   const sms = normalizeSms(body);
-  return AMOUNT_WITH_CURRENCY.test(sms) && MONEY_KEYWORDS.test(sms) && !PROMO_KEYWORDS.test(sms);
+  return (
+    AMOUNT_WITH_CURRENCY.test(sms) && MONEY_KEYWORDS.test(sms) && !PROMO_KEYWORDS.test(sms) && !isInformationalSms(sms)
+  );
 };
 
 const INCOME_HINT = /\b(?:re[çc]u|cr[ée]dit[ée]|d[ée]p[ôo]t (?:re[çc]u|sur votre compte))/i;

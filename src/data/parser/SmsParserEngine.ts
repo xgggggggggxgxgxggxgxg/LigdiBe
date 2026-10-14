@@ -9,6 +9,7 @@ import {
   parseOrangeTransIdDate,
   parseValidityDays,
 } from './textUtils';
+import { isInformationalSms } from './informationalFilters';
 import { isSensitiveSecuritySms, isWhitelistedSender, providerFromSender } from './securityFilters';
 
 export interface ParsedSms {
@@ -449,7 +450,7 @@ export const parseTransactionSms = (rawSms: string, options: ParseOptions = {}):
     return null;
   }
   const sms = normalizeSms(rawSms);
-  if (sms.length === 0 || isSensitiveSecuritySms(sms)) {
+  if (sms.length === 0 || isSensitiveSecuritySms(sms) || isInformationalSms(sms)) {
     return null;
   }
   for (const rule of RULES) {

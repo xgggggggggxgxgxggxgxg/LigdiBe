@@ -66,3 +66,19 @@ Node ≥ 22.5 requis pour les tests des dépôts SQL (`node:sqlite`).
 3. Pousser un tag `v1.0.0` : la CI produit l'AAB signé (`ligdibe-release-aab`).
 
 En local, les mêmes variables peuvent être placées dans `~/.gradle/gradle.properties`. Sans clé, le build release est signé avec la clé debug (non publiable).
+
+## Formats SMS réels — état d'avancement
+
+Calibrage sur un export réel (Orange Money, Moov Money, Wave, Ecobank — Burkina Faso). Fixtures anonymisées dans `__tests__/realSmsFormats.test.ts`.
+
+- [x] Étape 1 — Codes de sécurité (code SMS Moov, OTP Orange, validation Wave, activation Ecobank, mot de passe de retrait, lien de connexion Max it) et SMS informatifs (soldes consultés, demandes de paiement, échecs, unités offertes, détail de facture, recharge de carte virtuelle) écartés.
+- [ ] Étape 2 — Orange Money : reçu sans frais, « vous avez transfere … au numero », paiement sans frais, « recharge … d unites », dépôt agent (CI), transferts internationaux, envoi à un non-abonné.
+- [ ] Étape 3 — Moov Money : « recu … de credit du … » (achat de crédit), « Depot d'argent reussi », « Transfert National reussi ».
+- [ ] Étape 4 — Ecobank : « XOF … Crédit / Débit du ac », dépôts au Point Xpress (3 SMS pour une opération → 1 seule écriture).
+- [ ] Étape 5 — Import d'un fichier « SMS Exporter » (.txt) vers l'apprentissage guidé.
+
+### Reste à développer
+- Frais de retrait Orange : absents du SMS, déductibles de l'écart de solde (non calculés).
+- Frais de facture ONEA/SONABEL : présents seulement dans le SMS « détail de facture » (ignoré pour éviter le doublon).
+- Crédit Moov « recu … de credit du <numéro> » : impossible de distinguer un achat pour soi d'un cadeau reçu sans le solde ; proposé avec confiance moyenne dans l'apprentissage guidé.
+- Expéditeurs non agréés vus dans l'export (NANAN, OrangeMaxit) : à ajouter à la main dans Réglages si souhaité.

@@ -59,6 +59,13 @@ const SENSITIVE_PATTERNS: ReadonlyArray<RegExp> = [
   /\bvotre\s+code\s*(?:est|:)/i,
   /\bne\s+(?:le\s+)?(?:communiquez|partagez|divulguez)\b/i,
   /\bverification\s+code\b/i,
+  // Formats réels relevés : « 091637 est votre code SMS. NE PAS le partager », « Code d Activation est 624047 »
+  /\bcode\s+SMS\b/i,
+  /\bne\s+pas\s+(?:le\s+|la\s+)?(?:partager|communiquer|divulguer)\b/i,
+  /\bcode\s+d['\s]?activation\b/i,
+  /\bactivation\s+code\b/i,
+  /\bne\s+(?:le\s+)?partagez\b/i,
+  /\boms-links\/auth\b|\bconfirmer\s+la\s+connexion\b/i,
 ];
 
 export const isSensitiveSecuritySms = (body: string): boolean => SENSITIVE_PATTERNS.some(p => p.test(body));
