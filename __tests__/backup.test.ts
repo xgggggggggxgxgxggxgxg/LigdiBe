@@ -1,3 +1,5 @@
+import { strToU8 } from 'fflate';
+import { bytesToBase64 } from '../src/services/archive/BackupArchive';
 import RNFS from 'react-native-fs';
 import { DEFAULT_BUDGET_CONFIG } from '../src/domain/models/Budget';
 import { listBackupFiles, restoreBackup, restoreBackupFile } from '../src/services/export/BackupService';
@@ -87,7 +89,7 @@ describe('Sauvegarde → restauration (aller-retour)', () => {
 
     await exportJsonBackup(source, '2026-10', NOW);
     const written = (RNFS.writeFile as jest.Mock).mock.calls.at(-1)[1] as string;
-    (RNFS.readFile as jest.Mock).mockResolvedValueOnce(written);
+    (RNFS.readFile as jest.Mock).mockResolvedValueOnce(bytesToBase64(strToU8(written)));
 
     const target = createInMemoryRepositories();
     expect(await restoreBackupFile(target, '/x.json')).toEqual({ transactions: 2, debts: 1, plannedItems: 1 });

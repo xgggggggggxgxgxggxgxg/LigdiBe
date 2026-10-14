@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Avatar, Button, Card, IconButton, List, ProgressBar, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import { formatMonthLabel, monthKey, nextMonthKey, previousMonthKey } from '../../core/dates';
 import type { Transaction } from '../../domain/models/Transaction';
-import { getRepositories } from '../../data/repositories';
 import {
   buildInsights,
   compareMonths,
@@ -16,7 +15,6 @@ import {
   totalCashWithdrawn,
   totalFees,
 } from '../../domain/usecases/Statistics';
-import { exportJsonBackup, exportTransactionsCsv } from '../../services/export/ExportService';
 import { potentialSavings } from '../../domain/usecases/FeeComparator';
 import { FeeComparatorModal } from '../components/FeeComparatorModal';
 import { StatTile } from '../components/StatTile';
@@ -28,7 +26,6 @@ export const StatsScreen = ({ navigation }: { navigation?: DataTrackerLink }) =>
   const transactions = useFinanceStore(s => s.transactions);
   const now = useFinanceStore(s => s.now);
   const getMonthTransactions = useFinanceStore(s => s.getMonthTransactions);
-  const [exporting, setExporting] = useState(false);
   const currentMonth = monthKey(now);
   const [month, setMonth] = useState(currentMonth);
   const [monthTxs, setMonthTxs] = useState<Transaction[]>([]);
@@ -60,19 +57,6 @@ export const StatsScreen = ({ navigation }: { navigation?: DataTrackerLink }) =>
   const savings = useMemo(() => potentialSavings(monthTxs, transactions), [monthTxs, transactions]);
   const [comparing, setComparing] = useState(false);
   const airtime = totalAirtime(monthTxs);
-
-  const runExport = async (kind: 'csv' | 'json') => {
-    setExporting(true);
-    try {
-      const repos = await getRepositories();
-      const res = kind === 'csv' ? await exportTransactionsCsv(repos) : await exportJsonBackup(repos, month);
-      Alert.alert('Export réussi ✅', `${res.count} opérations exportées dans :\n${res.path}`);
-    } catch (e) {
-      Alert.alert('Export impossible', e instanceof Error ? e.message : String(e));
-    } finally {
-      setExporting(false);
-    }
-  };
 
   const shareSummary = () =>
     Share.share({
@@ -207,20 +191,20 @@ export const StatsScreen = ({ navigation }: { navigation?: DataTrackerLink }) =>
           </Card>
         )}
 
-        <Card style={styles.card}>
-          <Card.Title title="Exporter les données" subtitle="Fichiers horodatés dans Téléchargements" />
+        <Card style={styles.card} testID="backup-card">
+          <Card.Title
+            title="Sauvegarde & export"
+            subtitle="ZIP, CSV (Excel) ou JSON · transfert vers un autre téléphone"
+            left={props => <Avatar.Icon {...props} icon="folder-zip-outline" />}
+          />
           <Card.Actions>
             <Button
-              icon="file-delimited-outline"
+              icon="archive-arrow-down-outline"
               mode="contained"
-              loading={exporting}
-              disabled={exporting}
-              onPress={() => runExport('csv')}
-              testID="export-csv">
-              CSV
-            </Button>
-            <Button icon="code-json" disabled={exporting} onPress={() => runExport('json')}>
-              Sauvegarde JSON
+              disabled={!navigation}
+              onPress={() => navigation?.navigate('Backup')}
+              testID="open-backup">
+              Exporter mes données
             </Button>
           </Card.Actions>
         </Card>

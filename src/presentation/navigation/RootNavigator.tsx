@@ -5,6 +5,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import { BackupScreen } from '../screens/BackupScreen';
 import { DataTrackerScreen } from '../screens/DataTrackerScreen';
 import { DebtsScreen } from '../screens/DebtsScreen';
 import { LockScreen } from '../screens/LockScreen';
@@ -27,6 +28,7 @@ export type RootTabParamList = {
 export type RootStackParamList = {
   Onglets: undefined;
   DataTracker: undefined;
+  Backup: undefined;
 };
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
@@ -100,6 +102,7 @@ export const RootNavigator = () => {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Onglets" component={Tabs} />
         <Stack.Screen name="DataTracker" component={DataTrackerScreen} options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="Backup" component={BackupScreen} options={{ animation: 'slide_from_right' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );

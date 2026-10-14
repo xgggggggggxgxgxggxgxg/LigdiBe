@@ -4,7 +4,8 @@ import type { FamilyRequest } from '../../domain/models/FamilyRequest';
 import { FAMILY_MEMBERS_KEY, mergeFamilyMembers } from '../../domain/usecases/FamilyMembers';
 import type { Repositories } from '../../domain/repositories';
 import { FAMILY_REQUESTS_KEY, SOLIDARITY_BUDGET_KEY } from '../../domain/usecases/FamilySolidarity';
-import { parseJsonBackup, type BackupSnapshot } from '../exportBuilders';
+import { base64ToBytes, readBackupBytes } from '../archive/BackupArchive';
+import type { BackupSnapshot } from '../exportBuilders';
 
 export interface BackupFile {
   path: string;
@@ -21,7 +22,7 @@ export const listBackupFiles = async (): Promise<BackupFile[]> => {
     try {
       const entries = await RNFS.readDir(dir);
       for (const e of entries) {
-        if (e.isFile() && /^LigdiBe_sauvegarde_.*\.json$/.test(e.name)) {
+        if (e.isFile() && /^LigdiBe_sauvegarde_.*\.(?:json|zip)$/i.test(e.name)) {
           files.push({ path: e.path, name: e.name, modifiedAt: e.mtime, size: Number(e.size) });
         }
       }
@@ -82,5 +83,10 @@ export const restoreBackup = async (repos: Repositories, snapshot: BackupSnapsho
   };
 };
 
+/** Restaure un fichier de sauvegarde (.zip LigdiBe ou .json) depuis son chemin. */
 export const restoreBackupFile = async (repos: Repositories, path: string): Promise<RestoreReport> =>
-  restoreBackup(repos, parseJsonBackup(await RNFS.readFile(path, 'utf8')));
+  restoreBackupBase64(repos, await RNFS.readFile(path, 'base64'));
+
+/** Restaure depuis un contenu base64 (fichier choisi dans le sélecteur Android, quel que soit son dossier). */
+export const restoreBackupBase64 = async (repos: Repositories, base64: string): Promise<RestoreReport> =>
+  restoreBackup(repos, readBackupBytes(base64ToBytes(base64)));

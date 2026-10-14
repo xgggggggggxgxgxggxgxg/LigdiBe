@@ -50,7 +50,7 @@ export const filterTransactions = (txs: ReadonlyArray<Transaction>, f: QuickFilt
 
 /** Navigation minimale (l'écran est aussi rendu hors navigateur dans les tests). */
 export interface DataTrackerLink {
-  navigate: (screen: 'DataTracker') => void;
+  navigate: (screen: 'DataTracker' | 'Backup') => void;
 }
 
 export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {

@@ -23,7 +23,7 @@
 | Épargne | Objectifs (Tabaski, rentrée, moto…) avec effort quotidien/hebdomadaire et suivi du rythme. |
 | Recherche | Dans tout l'historique (nom, numéro, montant, catégorie, sans accents) avec total envoyé / reçu : « combien j'ai donné à Moussa ? ». |
 | Gamification | Série de jours sous budget 🔥, 8 badges, défi de la semaine. |
-| Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté, **restauration** de sauvegarde (changement de téléphone). |
+| Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Écran « Sauvegarde & transfert » : export **ZIP** (sauvegarde complète + CSV + notice), CSV (Excel) ou JSON horodaté ; envoi par le menu de partage Android (WhatsApp, Bluetooth, Drive…) ; import d'un .zip ou .json depuis n'importe quel dossier (sélecteur de fichiers) avec aperçu avant fusion. |
 | Sécurité | Verrouillage par code PIN (haché, salé, blocage après 5 essais), soldes masquables. |
 | Notifications | Post-dépense avec catégories en un tap, rappel 07h30, bilan 21h30, bilan mensuel le 1er, rappel prévisionnel le 28, alertes. |
 | Widget Android | Budget du jour sur l'écran d'accueil (reste, jauge, série 🔥, week-end), mis à jour à chaque SMS même app fermée ; patrimoine affiché seulement si activé. |

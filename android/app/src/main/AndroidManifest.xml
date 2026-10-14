@@ -53,6 +53,17 @@
         android:name=".sms.SmsHeadlessTaskService"
         android:exported="false" />
 
+      <!-- Partage des sauvegardes (.zip / .json) vers WhatsApp, Bluetooth, Drive… -->
+      <provider
+        android:name="androidx.core.content.FileProvider"
+        android:authorities="${applicationId}.fileprovider"
+        android:exported="false"
+        android:grantUriPermissions="true">
+        <meta-data
+          android:name="android.support.FILE_PROVIDER_PATHS"
+          android:resource="@xml/file_paths" />
+      </provider>
+
       <!-- Widget « Budget du jour » sur l'écran d'accueil. -->
       <receiver
         android:name=".widget.BudgetWidgetProvider"
