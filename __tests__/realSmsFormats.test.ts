@@ -288,3 +288,94 @@ describe('cleanMerchantName', () => {
     expect(cleanMerchantName('INTOUCH')).toBe('INTOUCH');
   });
 });
+
+const moov = (sms: string) => parseTransactionSms(sms, { sender: 'MOOV MONEY' });
+
+describe('Étape 3 — Moov Money (formats réels)', () => {
+  test('achat de crédit payé avec Moov Money (avec ou sans solde)', () => {
+    expect(moov('Ref : DCP89MMSC0, Vous avez recu 600,00 FCFA de credit du 22670000001 via MOOV Money.')).toMatchObject(
+      {
+        provider: 'MOOV',
+        type: 'AIRTIME_RECHARGE',
+        amount: 600,
+        counterpartyPhone: '22670000001',
+        reference: 'DCP89MMSC0',
+        airtimeKind: 'VOICE',
+      },
+    );
+    const withBalance = moov(
+      'Ref : DFN8EUTXGG, Vous avez recu 200,00 FCFA de credit du 22670000001 via MOOV Money. GAGNEZ 200% de bonus sur toutes vos recharges.Bonus valable 10 jours avec une periode de grace de 10 jours apres expiration. Votre solde est de 876,00 FCFA.',
+    );
+    expect(withBalance).toMatchObject({ amount: 200, balanceAfter: 876, ruleId: 'MOOV_CREDIT_PURCHASE' });
+    const { proposeFor, EMPTY_LEARNED_STATE } = require('../src/domain/usecases/LearningQueue');
+    const at = { sender: 'MOOV MONEY', receivedAt: '2026-06-23T23:42:00' };
+    expect(proposeFor({ ...at, body: withBalance!.rawSms }, EMPTY_LEARNED_STATE).confidence).toBe(0.9);
+    expect(
+      proposeFor(
+        { ...at, body: 'Ref : DEE9CI0KR7, Vous avez recu 450,00 FCFA de credit du 22601000005 via MOOV Money.' },
+        EMPTY_LEARNED_STATE,
+      ),
+    ).toMatchObject({ confidence: 0.6, category: "Crédit d'appel & Data" });
+  });
+
+  test('dépôt d’argent chez un agent : Poche → MoMo', () => {
+    expect(
+      moov(
+        "Depot d'argent reussi aupres de: FASO PHONE FASO PHONE\nCode agent: 0003485\nMontant: 12 000,00 FCFA\nTID: DCP99MZU2L\nSolde: 24 551,00 FCFA",
+      ),
+    ).toMatchObject({
+      type: 'AGENT_DEPOSIT',
+      amount: 12000,
+      counterpartyName: 'FASO PHONE',
+      agentCode: '0003485',
+      balanceAfter: 24551,
+      reference: 'DCP99MZU2L',
+    });
+    expect(
+      moov(
+        "Depot d'argent reussi aupres de: JUDITH TIENDREBEOGO\nCode agent: 0059948\nMontant: 1 000,00 FCFA\nTID: DI12J413KU\nDate: 01/09/2026 14:25:16\nSolde: 1 001,00 FCFA",
+      ),
+    ).toMatchObject({ amount: 1000, occurredAt: '2026-09-01T14:25:16', balanceAfter: 1001 });
+  });
+
+  test('transfert national', () => {
+    expect(
+      moov(
+        "Transfert National reussi pour Samuel Bado.\nNuméro de mobile: 22661000002\nMontant: 20 200,00 FCFA \nFrais: 0,00 FCFA \nTotal: 20 200,00 FCFA\nDate: 25/03/2026 12:03:43\nTID: DCP09N1EJE\nSolde: 3 851,00 FCFA\nTéléchargez l'app Moov Money : https://moov-money.bf/app",
+      ),
+    ).toMatchObject({
+      type: 'EXPENSE',
+      amount: 20200,
+      fee: 0,
+      total: 20200,
+      counterpartyName: 'Samuel Bado',
+      counterpartyPhone: '22661000002',
+      balanceAfter: 3851,
+      reference: 'DCP09N1EJE',
+      occurredAt: '2026-03-25T12:03:43',
+    });
+  });
+
+  test('formats déjà reconnus (paiement marchand avec espace final, reçu, retrait, recharge d’un numéro)', () => {
+    expect(
+      moov(
+        'Paiement reussi auprés du marchand SARL HUB \nMontant: 3 570,00 FCFA\nFrais: 0,00 FCFA\nTotal: 3 570,00 FCFA\nDate: 05/04/2026 23:47\nTID: DD55ABIPZB\nSolde: 281,00 FCFA',
+      ),
+    ).toMatchObject({ type: 'EXPENSE', amount: 3570, counterpartyName: 'SARL HUB', balanceAfter: 281 });
+    expect(
+      moov(
+        "Vous avez reçu 30 000,00 FCFA de Alex Ouedraogo. \nNuméro: 22672000003\nDate: 15/05/2026 13:53:55\nTID: DEF7CJLV2H\nSolde: 30 056,00 FCFA\nTéléchargez l'app Moov Money : https://moov-money.bf/app",
+      ),
+    ).toMatchObject({ type: 'INCOME', amount: 30000, counterpartyName: 'Alex Ouedraogo', balanceAfter: 30056 });
+    expect(
+      moov(
+        "Retrait reussi auprès de l'Agent GUIBRIL TIEMTORE\nCode d'agent: 0062623\nMontant: 25 000,00 FCFA \nFrais: 250,00 FCFA\nTotal: 25 250,00 FCFA\nDate: 19/05/2026 15:34:48\nTxn ID: DEJ9CRB7CF\nSolde: 4 206,00 FCFA",
+      ),
+    ).toMatchObject({ type: 'CASH_WITHDRAWAL', amount: 25000, fee: 250, total: 25250 });
+    expect(
+      moov(
+        'Ref : DIN9KN8I7N, Vous avez rechargé le 22670000004 via Moov Money avec 550,00 FCFA de crédit. GAGNEZ 100% de bonus sur toutes vos recharges.Votre solde MOOV Money est de 11 856,00 FCFA.',
+      ),
+    ).toMatchObject({ type: 'AIRTIME_RECHARGE', amount: 550, balanceAfter: 11856 });
+  });
+});

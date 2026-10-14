@@ -73,7 +73,7 @@ Calibrage sur un export réel (Orange Money, Moov Money, Wave, Ecobank — Burki
 
 - [x] Étape 1 — Codes de sécurité (code SMS Moov, OTP Orange, validation Wave, activation Ecobank, mot de passe de retrait, lien de connexion Max it) et SMS informatifs (soldes consultés, demandes de paiement, échecs, unités offertes, détail de facture, recharge de carte virtuelle) écartés.
 - [x] Étape 2 — Orange Money : reçu sans frais, « vous avez transfere … au numero », paiement sans frais, « recharge … d unites », dépôt agent (CI), transferts internationaux, envoi à un non-abonné.
-- [ ] Étape 3 — Moov Money : « recu … de credit du … » (achat de crédit), « Depot d'argent reussi », « Transfert National reussi ».
+- [x] Étape 3 — Moov Money : « recu … de credit du … » (achat de crédit), « Depot d'argent reussi », « Transfert National reussi ».
 - [ ] Étape 4 — Ecobank : « XOF … Crédit / Débit du ac », dépôts au Point Xpress (3 SMS pour une opération → 1 seule écriture).
 - [ ] Étape 5 — Import d'un fichier « SMS Exporter » (.txt) vers l'apprentissage guidé.
 

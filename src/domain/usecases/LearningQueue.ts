@@ -222,7 +222,12 @@ export interface Proposal {
 
 /** Règles opérateur précises → haute confiance ; règles génériques → moyenne. */
 const parserConfidence = (parsed: ParsedSms): number =>
-  parsed.ruleId.startsWith('GENERIC') || parsed.ruleId.startsWith('BANK') ? 0.65 : 0.9;
+  parsed.ruleId.startsWith('GENERIC') || parsed.ruleId.startsWith('BANK')
+    ? 0.65
+    : // Crédit « reçu du <numéro> » sans solde : achat pour soi ou cadeau d'un proche ? À confirmer.
+    parsed.ruleId === 'MOOV_CREDIT_PURCHASE' && parsed.balanceAfter === undefined
+    ? 0.6
+    : 0.9;
 
 export const HIGH_CONFIDENCE = 0.8;
 

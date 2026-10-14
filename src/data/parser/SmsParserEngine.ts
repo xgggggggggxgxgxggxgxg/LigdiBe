@@ -209,6 +209,58 @@ const RULES: ReadonlyArray<ParserRule> = [
     }),
   },
 
+  // ---- Formats Moov Money BF relevés sur de vrais SMS (2026) ----
+  {
+    // « Ref : DCP89MMSC0, Vous avez recu 600,00 FCFA de credit du 22671956255 via MOOV Money. [… Votre solde est de 876,00 FCFA.] »
+    // Achat de crédit d'appel payé avec Moov Money (le solde Money baisse du même montant).
+    id: 'MOOV_CREDIT_PURCHASE',
+    provider: 'MOOV',
+    pattern: new RegExp(`Vous avez re[çc]u ${AMT}${CUR} de cr[ée]dit du\\s+\\+?(\\d{8,}) via MOOV Money`, 'i'),
+    build: (m, s) => ({
+      type: 'AIRTIME_RECHARGE',
+      amount: parseAmountOrZero(m[1]),
+      counterpartyPhone: m[2],
+      balanceAfter: parseAmount(field(s, new RegExp(`Votre solde est de\\s*:?\\s*${AMT}${CUR}`, 'i'))),
+      reference: moovRef(s),
+    }),
+  },
+  {
+    // « Depot d'argent reussi aupres de: FASO PHONE FASO PHONE\nCode agent: 0003485\nMontant: 12 000,00 FCFA\nTID: …\nSolde: … »
+    id: 'MOOV_CASH_DEPOSIT',
+    provider: 'MOOV',
+    pattern: /D[ée]p[ôo]t d['\s]?argent r[ée]ussi aupr[èéeê]s de\s*:\s*([^\n]+)\n/i,
+    build: (m, s) => ({
+      type: 'AGENT_DEPOSIT',
+      amount: parseAmountOrZero(field(s, new RegExp(`Montant\\s*:\\s*${AMT}${CUR}`, 'i'))),
+      counterpartyName: cleanMerchantName(m[1]),
+      agentCode: field(s, /Code (?:d')?agent\s*:\s*(\d+)/i),
+      balanceAfter: moovBalance(s),
+      reference: moovRef(s),
+      occurredAt: moovDate(s),
+    }),
+  },
+  {
+    // « Transfert National reussi pour NOM.\nNuméro de mobile: 226…\nMontant: …\nFrais: …\nTotal: …\nDate: …\nTID: …\nSolde: … »
+    id: 'MOOV_NATIONAL_TRANSFER',
+    provider: 'MOOV',
+    pattern: /Transfert National r[ée]ussi pour ([^\n]+?)\.?\s*\n\s*Num[ée]ro de mobile\s*:\s*\+?(\d+)/i,
+    build: (m, s) => {
+      const name = cleanName(m[1]);
+      return {
+        type: 'EXPENSE',
+        amount: parseAmountOrZero(field(s, new RegExp(`Montant\\s*:\\s*${AMT}${CUR}`, 'i'))),
+        fee: moovFee(s),
+        total: moovTotal(s),
+        counterpartyName: name,
+        counterpartyPhone: m[2],
+        merchantOrRecipient: name,
+        balanceAfter: moovBalance(s),
+        reference: moovRef(s),
+        occurredAt: moovDate(s),
+      };
+    },
+  },
+
   // ===================== ORANGE MONEY =====================
   {
     id: 'ORANGE_PAYMENT',
