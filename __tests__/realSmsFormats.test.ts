@@ -84,3 +84,207 @@ describe('Étape 1 — codes de sécurité et SMS informatifs (formats réels)',
     expect(looksLikeFinancialSms(sms)).toBe(false);
   });
 });
+
+const om = (sms: string) => parseTransactionSms(sms, { sender: 'OrangeMoney' });
+
+describe('Étape 2 — Orange Money (formats réels)', () => {
+  test('reçu sans frais (nom, numéro, solde, date issue du Trans ID)', () => {
+    expect(
+      om(
+        'Vous avez recu 4,000.00 FCFA du 05000001,JEAN KABORE. Le solde de votre compte est de 4061.59 FCFA Trans ID: PP260311.1606.51755838. Flashez le QR CODE marchand avec Max it pour plus de facilite : https://onelink.to/nn64xw',
+      ),
+    ).toMatchObject({
+      provider: 'ORANGE',
+      type: 'INCOME',
+      amount: 4000,
+      counterpartyPhone: '05000001',
+      counterpartyName: 'JEAN KABORE',
+      balanceAfter: 4061.59,
+      reference: 'PP260311.1606.51755838',
+      occurredAt: '2026-03-11T16:06:00',
+      ruleId: 'ORANGE_RECEIVED_SIMPLE',
+    });
+  });
+
+  test('transfert envoyé, avec ou sans frais/taxe affichés', () => {
+    expect(
+      om(
+        'Cher client, vous avez transfere 200.00 FCFA au numero 56000002,francois. Votre solde est de  3861.59 FCFA. ID Trans: PP260311.2005.28917878. Pour toute reclamation contactez par appel le 127 ou whatsapp 07000121. Orange Money BF',
+      ),
+    ).toMatchObject({
+      type: 'EXPENSE',
+      amount: 200,
+      fee: 0,
+      counterpartyPhone: '56000002',
+      counterpartyName: 'francois',
+      balanceAfter: 3861.59,
+      reference: 'PP260311.2005.28917878',
+    });
+    expect(
+      om(
+        'Cher client, vous avez transfere 4,000.00 FCFA, Frais: 34.7826 FCFA, Taxe: 5.2174 FCFA au numero 45000003,ACCEPTEUR GD STEPH EXCHANGE BF. Votre solde est de  24102.34 FCFA. ID Trans: PP260916.1250.2968267. Pour toute reclamation contactez par appel le 127',
+      ),
+    ).toMatchObject({
+      amount: 4000,
+      fee: 34.7826,
+      tax: 5.2174,
+      total: 4040,
+      counterpartyName: 'ACCEPTEUR GD STEPH EXCHANGE BF',
+    });
+    expect(
+      om(
+        'Cher client, vous avez transfere 2,000.00 FCFA, Frais: 0.0 FCFA, Taxe:  FCFA au numero 55000004,RAGNANGNEWENDE JOEL M. Votre solde est de  12586.09 FCFA. ID Trans: PP260502.1059.55712255.',
+      ),
+    ).toMatchObject({ amount: 2000, fee: 0, counterpartyName: 'RAGNANGNEWENDE JOEL M' });
+  });
+
+  test('paiement sans frais : marchand nettoyé, crédit « UNITE AIRTIME », solde sans devise', () => {
+    expect(
+      om(
+        'Votre paiement de 100.00 FCFA a UNITE AIRTIME a ete effectue avec succes. Votre solde est de : 8761.59 Trans id: MP260314.0737.51782296. Pour gagner des depots et des motos inscrivez-vous au challenge',
+      ),
+    ).toMatchObject({ type: 'AIRTIME_RECHARGE', amount: 100, balanceAfter: 8761.59, airtimeKind: 'VOICE' });
+    expect(
+      om(
+        'Votre paiement de 700.00 FCFA a ACCEPTEUR GD PHARMACIE LENDIMI PHARMACIE LENDIMI a ete effectue avec succes. Votre solde est de : 31481.59 FCFA. Trans id: MP260703.1732.10328348.',
+      ),
+    ).toMatchObject({ type: 'EXPENSE', amount: 700, counterpartyName: 'PHARMACIE LENDIMI', balanceAfter: 31481.59 });
+    expect(
+      om(
+        'Votre paiement de 10,200.00 FCFA a CONNEKT4 BURKINA FASO a ete effectue avec succes. Votre solde: 2746.59 FCFA.Trans id: OM260317.2327.71325078.',
+      ),
+    ).toMatchObject({
+      amount: 10200,
+      counterpartyName: 'CONNEKT4 BURKINA FASO',
+      balanceAfter: 2746.59,
+      reference: 'OM260317.2327.71325078',
+    });
+    expect(
+      om(
+        'Votre paiement de  5,000.00 FCFA a Visa Orange Money a ete effectue avec succes. Votre solde:  21.09 FCFA.Trans id: MP260423.1339.79596324.',
+      ),
+    ).toMatchObject({ amount: 5000, balanceAfter: 21.09 });
+    expect(
+      om(
+        'Votre paiement de 5,636.00 FCFA a ONEA ONEA ONEA a ete effectue avec succes. Votre solde est de : 233.59 Trans id: MP260812.0749.25703121.',
+      )?.counterpartyName,
+    ).toBe('ONEA');
+    expect(
+      om(
+        'Votre paiement de 1,000.00 FCFA a ACCEPTEUR GD SKARLUB SKARLUB a ete effectue avec succes. Votre solde est de : 101290.59 FCFA. Trans id: MP260607.1919.95731485.',
+      )?.counterpartyName,
+    ).toBe('SKARLUB');
+    expect(
+      om(
+        'Votre paiement de 1,200.00 FCFA a ACCEPTEUR GD SOUGR NOOMA SOUGR NOOMA a ete effectue avec succes. Votre solde est de : 6316.59 FCFA. Trans id: MP260325.1457.79375003.',
+      )?.counterpartyName,
+    ).toBe('SOUGR NOOMA');
+  });
+
+  test('recharge d’unités (bonus promo ignoré)', () => {
+    expect(
+      om(
+        'Vous avez recharge 100.00 FCFA d unites. Gagnez 200% de bonus sur toutes premieres recharges Orange Money de moins de 10000F et 100% sur les autres recharges. Bonus valable 7 jours et utilisable vers tous les reseaux nationaux. Votre solde est de 8661.59 FCFA. TRANS ID: RC260314.2022.71382126. Rendez-vous sur Max it : http://urlz.fr/bpmE pour profiter de nos meilleures offres.',
+      ),
+    ).toMatchObject({
+      type: 'AIRTIME_RECHARGE',
+      amount: 100,
+      balanceAfter: 8661.59,
+      reference: 'RC260314.2022.71382126',
+      ruleId: 'ORANGE_AIRTIME_UNITS',
+    });
+  });
+
+  test('dépôt d’espèces chez un agent (Trans ID CI…) : Poche → MoMo', () => {
+    expect(
+      om(
+        "Cher client, vous avez recu 2,500.00 FCFA de 5400001 NOUR SERVEX OUAGA. Votre solde est de 4976.59 FCFA. ID Trans: CI260315.1122.10341490. Merci d'utiliser Orange Money.",
+      ),
+    ).toMatchObject({
+      type: 'AGENT_DEPOSIT',
+      amount: 2500,
+      agentCode: '5400001',
+      counterpartyName: 'NOUR SERVEX OUAGA',
+      balanceAfter: 4976.59,
+    });
+    expect(
+      om(
+        "Cher client, vous avez recu 15000.0 FCFA, Frais:  FCFA, Taxe:  FCFA de 6000002 TEELECOM ZOUNDI ET FRERE. Votre solde est de 17321.59 FCFA. ID Trans: CI260726.1908.45353472. Merci d'utiliser Orange Money.",
+      ),
+    ).toMatchObject({ type: 'AGENT_DEPOSIT', amount: 15000, counterpartyName: 'TEELECOM ZOUNDI ET FRERE' });
+  });
+
+  test('transferts internationaux envoyé / reçu', () => {
+    expect(
+      om(
+        'Transfert avec succes de 3,100.00 FCFA au client MOOV Togo 22800000005., Frais : 40.4348 FCFA TransID : MP260422.1217.53531345',
+      ),
+    ).toMatchObject({
+      type: 'EXPENSE',
+      amount: 3100,
+      fee: 40.4348,
+      counterpartyName: 'MOOV Togo',
+      counterpartyPhone: '22800000005',
+      reference: 'MP260422.1217.53531345',
+    });
+    expect(
+      om(
+        'Transfert d argent de 8200 FCFA recu du +91000006 (Togo).\nNouveau solde OM : 10528.34 FCFA\nID : db7d6b3e\nOrange Money vous remercie.',
+      ),
+    ).toMatchObject({
+      type: 'INCOME',
+      amount: 8200,
+      counterpartyPhone: '+91000006',
+      counterpartyName: 'Transfert Togo',
+      balanceAfter: 10528.34,
+      reference: 'db7d6b3e',
+    });
+    expect(
+      om('Transfert d argent de 5000 FCFA recu du +22500000009.\nNouveau solde OM : 6000 FCFA')?.counterpartyName,
+    ).toBeUndefined();
+  });
+
+  test('envoi à un non-abonné (retrait par code)', () => {
+    expect(
+      om(
+        'Vous avez envoy 125.00 FCFA  71000007. Votre solde est de 5088.34 FCFA. Trans ID PP260901.1411.42140919. Merci de bien vouloir contacter le destinataire pour un retrait dans 4 jours au plus.',
+      ),
+    ).toMatchObject({
+      type: 'EXPENSE',
+      amount: 125,
+      counterpartyPhone: '71000007',
+      balanceAfter: 5088.34,
+      reference: 'PP260901.1411.42140919',
+    });
+  });
+
+  test('retraits et paiements déjà reconnus : inchangés', () => {
+    expect(
+      om(
+        'Vous avez retire 1,000,000.00 FCFA aupres de l agent 7700001 ANSV BORO DORO CELESATECH, Trans ID : CO261007.1628.28935352. Votre solde est de : 281007.94 FCFA. Telechargez la nouvelle application Orange Money : https://onelink.to/trqvq2',
+      ),
+    ).toMatchObject({
+      type: 'CASH_WITHDRAWAL',
+      amount: 1000000,
+      balanceAfter: 281007.94,
+      reference: 'CO261007.1628.28935352',
+    });
+    expect(
+      om(
+        'Vous avez recu 780.0 FCFA, Frais:  FCFA, Taxe:  FCFA du 55000008,MOHAMED. Le solde de votre compte est de 811.59 FCFA Trans ID: PP260715.1413.42144938.',
+      ),
+    ).toMatchObject({ type: 'INCOME', amount: 780, ruleId: 'ORANGE_TRANSFER_RECEIVED' });
+  });
+});
+
+describe('cleanMerchantName', () => {
+  test('préfixe ACCEPTEUR et répétitions retirés, noms simples conservés', () => {
+    const { cleanMerchantName } = require('../src/data/parser/SmsParserEngine');
+    expect(cleanMerchantName('ACCEPTEUR HD PHARMACIE AVE MARIA PHARMACIE AVE MARIA')).toBe('PHARMACIE AVE MARIA');
+    expect(cleanMerchantName('BOUTIQUE SOUGR NOOMA SOUGR NOOMA')).toBe('BOUTIQUE SOUGR NOOMA');
+    expect(cleanMerchantName('ACCEPTEUR GD SINARE ALLAYE ETS ABDOUL SAHA NOOMA')).toBe(
+      'SINARE ALLAYE ETS ABDOUL SAHA NOOMA',
+    );
+    expect(cleanMerchantName('INTOUCH')).toBe('INTOUCH');
+  });
+});

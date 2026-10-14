@@ -82,7 +82,39 @@ const orangeBalance = (s: string) =>
       new RegExp(`(?:Votre solde est de|Le solde de votre compte est de|Nouveau solde)\\s*:?\\s*${AMT}${CUR}`, 'i'),
     ),
   );
-const orangeRef = (s: string) => field(s, /Trans(?:action)?\s*id\s*:\s*([A-Z0-9]+(?:\.[A-Z0-9]+)*)/i);
+const orangeRef = (s: string) =>
+  field(
+    s,
+    /(?:Trans(?:action)?\s*id|ID\s*Trans|TransID)\s*:?\s*([A-Z]{2}\d{6}\.[A-Z0-9]+(?:\.[A-Z0-9]+)*|[A-Z0-9]+(?:\.[A-Z0-9]+)*)/i,
+  );
+/** Solde Orange même sans devise : « Votre solde est de : 8761.59 Trans id », « Votre solde: 2746.59 FCFA. » */
+const orangeLooseBalance = (s: string) =>
+  orangeBalance(s) ?? parseAmount(field(s, /(?:Votre solde(?: est de)?|Nouveau solde OM)\s*:?\s*(\d[\d.,]*\d|\d)/i));
+/** « ACCEPTEUR GD PHARMACIE LENDIMI PHARMACIE LENDIMI » → « PHARMACIE LENDIMI ». */
+export const cleanMerchantName = (value: string): string => {
+  const words = cleanName(value)
+    .replace(/^ACCEPTEUR\s+[A-Z]{2}\s+/i, '')
+    .split(' ');
+  for (let k = 1; k <= words.length / 2; k++) {
+    if (words.length % k === 0 && words.every((w, i) => w.toUpperCase() === words[i % k].toUpperCase())) {
+      return words.slice(0, k).join(' ');
+    }
+  }
+  const half = Math.floor(words.length / 2);
+  // « SOUGR NOOMA SOUGR NOOMA » ou « X Y Z Y Z » : on retire la répétition finale
+  for (let k = half; k >= 1; k--) {
+    const tail = words.slice(-k).join(' ').toUpperCase();
+    const before = words
+      .slice(-2 * k, -k)
+      .join(' ')
+      .toUpperCase();
+    if (tail === before) {
+      return words.slice(0, words.length - k).join(' ');
+    }
+  }
+  return words.join(' ');
+};
+const FEES_TAX = `(?:,\\s*Frais\\s*:\\s*${OPT_AMT}${CUR},\\s*Taxe\\s*:\\s*${OPT_AMT}${CUR})?`;
 
 // ---------- Champs communs Wave / UBA ----------
 const waveBalance = (s: string) => parseAmount(field(s, new RegExp(`Solde(?: Wave)?\\s*:\\s*${AMT}${CUR}`, 'i')));
@@ -254,6 +286,142 @@ const RULES: ReadonlyArray<ParserRule> = [
         reference: orangeRef(s),
       });
     },
+  },
+
+  // ---- Formats Orange Money BF relevés sur de vrais SMS (2026) ----
+  {
+    // « Cher client, vous avez recu 2,500.00 FCFA de 5446191 NOUR SERVEX OUAGA. … ID Trans: CI… » : dépôt d'espèces chez un agent.
+    id: 'ORANGE_CASH_IN',
+    provider: 'ORANGE',
+    pattern: new RegExp(`vous avez re[çc]u ${AMT}${CUR}${FEES_TAX}\\s+de (\\d{6,7}) ([^\\n]+?)\\.\\s*Votre solde`, 'i'),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'AGENT_DEPOSIT',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyName: cleanName(m[5]),
+        agentCode: m[4],
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
+  },
+  {
+    // « Vous avez recu 4,000.00 FCFA du 05298812,NOM. Le solde de votre compte est de … » (sans frais)
+    id: 'ORANGE_RECEIVED_SIMPLE',
+    provider: 'ORANGE',
+    pattern: new RegExp(`Vous avez re[çc]u ${AMT}${CUR}\\s+du\\s+\\+?(\\d{8,})\\s*,\\s*([^.\\n]+)`, 'i'),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'INCOME',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyPhone: m[2],
+        counterpartyName: cleanName(m[3]),
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
+  },
+  {
+    // « Cher client, vous avez transfere 200.00 FCFA[, Frais: 0.0 FCFA, Taxe:  FCFA] au numero 56759245,francois. Votre solde est de … »
+    id: 'ORANGE_TRANSFER_SENT',
+    provider: 'ORANGE',
+    pattern: new RegExp(
+      `vous avez transf[ée]r[ée] ${AMT}${CUR}${FEES_TAX}\\s+au num[ée]ro\\s+\\+?(\\d{8,})\\s*,\\s*([^\\n]+?)\\.\\s*Votre solde`,
+      'i',
+    ),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'EXPENSE',
+        amount: parseAmountOrZero(m[1]),
+        fee: parseAmountOrZero(m[2]),
+        tax: parseAmountOrZero(m[3]),
+        counterpartyPhone: m[4],
+        counterpartyName: cleanName(m[5]),
+        merchantOrRecipient: cleanName(m[5]),
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
+  },
+  {
+    // « Votre paiement de 100.00 FCFA a UNITE AIRTIME a ete effectue avec succes. Votre solde est de : 8761.59 Trans id: … »
+    id: 'ORANGE_PAYMENT_SIMPLE',
+    provider: 'ORANGE',
+    pattern: new RegExp(`Votre paiement de\\s+${AMT}${CUR}\\s+(?:a|à)\\s+(.+?)\\s+a [ée]t[ée] effectu[ée]`, 'i'),
+    build: (m, s) => {
+      const name = cleanMerchantName(m[2]);
+      const airtime = /^UNITE AIRTIME$/i.test(name);
+      return withOrangeDate({
+        type: airtime ? 'AIRTIME_RECHARGE' : 'EXPENSE',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyName: airtime ? undefined : name,
+        merchantOrRecipient: airtime ? undefined : name,
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      });
+    },
+  },
+  {
+    // « Vous avez recharge 100.00 FCFA d unites. … Votre solde est de 8661.59 FCFA. TRANS ID: RC… »
+    id: 'ORANGE_AIRTIME_UNITS',
+    provider: 'ORANGE',
+    pattern: new RegExp(`Vous avez recharg[ée] ${AMT}${CUR} d\\s?['’]?unit[ée]s`, 'i'),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'AIRTIME_RECHARGE',
+        amount: parseAmountOrZero(m[1]),
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
+  },
+  {
+    // « Transfert avec succes de 3,100.00 FCFA au client MOOV Togo 22870776985., Frais : 40.4348 FCFA TransID : MP… »
+    id: 'ORANGE_INTERNATIONAL_SENT',
+    provider: 'ORANGE',
+    pattern: new RegExp(
+      `Transfert avec succ[eè]s de ${AMT}${CUR} au client (.+?)\\s+(\\+?\\d{8,})\\.?,?\\s*Frais\\s*:\\s*${OPT_AMT}${CUR}`,
+      'i',
+    ),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'EXPENSE',
+        amount: parseAmountOrZero(m[1]),
+        fee: parseAmountOrZero(m[4]),
+        counterpartyName: cleanName(m[2]),
+        counterpartyPhone: m[3],
+        merchantOrRecipient: cleanName(m[2]),
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
+  },
+  {
+    // « Transfert d argent de 8200 FCFA recu du +91569290 (Togo). Nouveau solde OM : 10528.34 FCFA ID : db7d6b3e »
+    id: 'ORANGE_INTERNATIONAL_RECEIVED',
+    provider: 'ORANGE',
+    pattern: new RegExp(
+      `Transfert d['\\s]?argent de ${AMT}${CUR} re[çc]u du\\s+(\\+?\\d{6,})\\s*(?:\\(([^)]+)\\))?`,
+      'i',
+    ),
+    build: (m, s) => ({
+      type: 'INCOME',
+      amount: parseAmountOrZero(m[1]),
+      counterpartyPhone: m[2],
+      counterpartyName: m[3] ? `Transfert ${cleanName(m[3])}` : undefined,
+      balanceAfter: orangeLooseBalance(s),
+      reference: field(s, /\bID\s*:\s*([A-Za-z0-9]+)/),
+    }),
+  },
+  {
+    // « Vous avez envoy 125.00 FCFA  71956255. Votre solde est de 5088.34 FCFA. Trans ID PP… » (retrait par code chez un agent)
+    id: 'ORANGE_SENT_TO_NON_SUBSCRIBER',
+    provider: 'ORANGE',
+    pattern: new RegExp(`Vous avez envoy[ée]? ${AMT}${CUR}\\s+(?:(?:à|a|au)\\s+)?(\\+?\\d{8,})\\.\\s*Votre solde`, 'i'),
+    build: (m, s) =>
+      withOrangeDate({
+        type: 'EXPENSE',
+        amount: parseAmountOrZero(m[1]),
+        counterpartyPhone: m[2],
+        merchantOrRecipient: m[2],
+        balanceAfter: orangeLooseBalance(s),
+        reference: orangeRef(s),
+      }),
   },
 
   // ===================== WAVE / UBA =====================
