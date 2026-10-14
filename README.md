@@ -10,6 +10,7 @@
 | SMS non reconnus | Un SMS opérateur au format inconnu n'est pas perdu : il est mis de côté (montant et compte pré-remplis) et s'ajoute en un tap depuis l'accueil. |
 | Retrait kiosque | MoMo débité (montant + frais), **Poche (espèces) créditée du net** : un retrait n'est pas une dépense. Frais → « Frais & Taxes ». |
 | Crédit & data | Compteur jour / mois / an des micro-recharges, alerte plafond. |
+| Internet (data) | Écran « Internet & crédit » : forfaits par semaine / mois / année, volume acheté (Mo/Go), prix du Go, opérateurs, forfaits les plus achetés, graphique interactif, plafond mensuel avec alerte, conseils (pass jour vs forfait mensuel). Les forfaits payés avec le crédit d'appel sont suivis sans être recomptés en dépense. |
 | Budget du jour | `(budget disponible − charges fixes) / jours restants` pondéré : ven. 18h → dim. ×1,5 (paramétrable), jours spéciaux (Tabaski…). Série de jours sous budget 🔥. |
 | Prévisionnel | Gains & dépenses prévus, coche automatique via le nom dans le SMS, sélection manuelle, report au mois suivant. |
 | Carnet informel | « On me doit » / « Je dois », relance WhatsApp/SMS pré-remplie, remboursements partiels, détection auto du remboursement. Tontines. |

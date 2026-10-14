@@ -93,8 +93,20 @@ export const buildLedgerEntries = (
     source: 'SMS',
     occurredAt,
     createdAt: nowIso,
+    dataVolumeMb: parsed.dataVolumeMb,
+    dataValidityDays: parsed.dataValidityDays,
   };
+  if (main.dataVolumeMb === undefined) {
+    delete main.dataVolumeMb;
+  }
+  if (main.dataValidityDays === undefined) {
+    delete main.dataValidityDays;
+  }
   const transactions: Transaction[] = [main];
+  if (parsed.type === 'DATA_FROM_CREDIT') {
+    // Forfait payé avec le crédit d'appel : on suit le volume, aucun solde MoMo ne bouge.
+    return { transactions, accounts: [] };
+  }
 
   const charges = roundMoney(parsed.fee + parsed.tax);
   if (charges > 0) {

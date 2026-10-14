@@ -13,13 +13,17 @@ const ICONS: Record<Transaction['type'], string> = {
   CASH_DEPOSIT: 'wallet-plus-outline',
   AGENT_DEPOSIT: 'bank-transfer-in',
   CASH_OUT: 'wallet-outline',
+  DATA_FROM_CREDIT: 'web',
 };
 
 /** Sens affiché : + revenu / poche alimentée, − dépense, ⇄ retrait (neutre). */
 export const transactionSign = (t: Transaction): '+' | '-' | '⇄' =>
   t.type === 'INCOME' || t.type === 'CASH_DEPOSIT'
     ? '+'
-    : t.type === 'CASH_WITHDRAWAL' || t.type === 'AGENT_DEPOSIT' || t.type === 'CASH_OUT'
+    : t.type === 'CASH_WITHDRAWAL' ||
+      t.type === 'AGENT_DEPOSIT' ||
+      t.type === 'CASH_OUT' ||
+      t.type === 'DATA_FROM_CREDIT'
     ? '⇄'
     : '-';
 

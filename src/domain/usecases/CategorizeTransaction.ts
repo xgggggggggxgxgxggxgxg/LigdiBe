@@ -42,13 +42,16 @@ export const counterpartyKey = (p: {
  * 4. transfert vers une personne (numéro de téléphone), sinon « Autre ».
  */
 export const autoCategorize = (
-  parsed: Pick<ParsedSms, 'type' | 'counterpartyName' | 'counterpartyPhone' | 'merchantOrRecipient'>,
+  parsed: Pick<ParsedSms, 'type' | 'counterpartyName' | 'counterpartyPhone' | 'merchantOrRecipient'> &
+    Partial<Pick<ParsedSms, 'airtimeKind'>>,
   learned: Readonly<Record<string, string>> = {},
   familyTails: ReadonlySet<string> = new Set(),
 ): string => {
   switch (parsed.type) {
     case 'AIRTIME_RECHARGE':
-      return CATEGORIES.AIRTIME;
+      return parsed.airtimeKind === 'DATA' ? CATEGORIES.DATA : CATEGORIES.AIRTIME;
+    case 'DATA_FROM_CREDIT':
+      return CATEGORIES.DATA;
     case 'CASH_WITHDRAWAL':
       return CATEGORIES.CASH_WITHDRAWAL;
     case 'AGENT_DEPOSIT':

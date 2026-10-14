@@ -1,7 +1,14 @@
 export type Provider = 'MOOV' | 'ORANGE' | 'UBA_WAVE' | 'WAVE' | 'TELECEL' | 'ECOBANK' | 'BANK' | 'CASH';
 
 /** Types produits par le parseur SMS. */
-export type ParsedTransactionType = 'EXPENSE' | 'INCOME' | 'CASH_WITHDRAWAL' | 'AGENT_DEPOSIT' | 'AIRTIME_RECHARGE';
+export type ParsedTransactionType =
+  | 'EXPENSE'
+  | 'INCOME'
+  | 'CASH_WITHDRAWAL'
+  | 'AGENT_DEPOSIT'
+  | 'AIRTIME_RECHARGE'
+  /** Forfait internet payé avec le crédit d'appel : volume suivi, mais ni dépense ni mouvement MoMo (déjà compté à la recharge). */
+  | 'DATA_FROM_CREDIT';
 
 /**
  * Types du grand livre local. `FEE` isole les frais/taxes opérateur,
@@ -37,6 +44,10 @@ export interface Transaction {
   occurredAt: string;
   /** Date d'enregistrement local (ISO 8601). */
   createdAt: string;
+  /** Forfait internet : volume acheté en Mo (1 Go = 1024 Mo). */
+  dataVolumeMb?: number;
+  /** Forfait internet : durée de validité en jours (0,04 ≈ 1 h). */
+  dataValidityDays?: number;
 }
 
 /** Transactions qui réduisent réellement le patrimoine de l'utilisateur. */

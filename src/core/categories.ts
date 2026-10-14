@@ -4,6 +4,7 @@ export const CATEGORIES = {
   FUEL: 'Carburant',
   TRANSPORT: 'Transport',
   AIRTIME: "Crédit d'appel & Data",
+  DATA: 'Forfait internet (Data)',
   FEES: 'Frais & Taxes',
   BILLS: 'Factures (Eau, Élec, TV)',
   RENT: 'Loyer',
@@ -38,6 +39,7 @@ export const EXPENSE_CATEGORY_LIST: ReadonlyArray<string> = [
   CATEGORIES.TONTINE,
   CATEGORIES.TRANSFER,
   CATEGORIES.AIRTIME,
+  CATEGORIES.DATA,
   CATEGORIES.FEES,
   CATEGORIES.OTHER,
 ];

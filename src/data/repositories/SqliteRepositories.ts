@@ -41,6 +41,8 @@ const TX_COLUMNS = [
   ['source', 'source'],
   ['occurredAt', 'occurred_at'],
   ['createdAt', 'created_at'],
+  ['dataVolumeMb', 'data_volume_mb'],
+  ['dataValidityDays', 'data_validity_days'],
 ] as const satisfies ReadonlyArray<readonly [keyof Transaction, string]>;
 
 const rowToTransaction = (r: SqlRow): Transaction => {

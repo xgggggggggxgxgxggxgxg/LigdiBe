@@ -48,7 +48,12 @@ export const filterTransactions = (txs: ReadonlyArray<Transaction>, f: QuickFilt
     }
   });
 
-export const DashboardScreen = () => {
+/** Navigation minimale (l'écran est aussi rendu hors navigateur dans les tests). */
+export interface DataTrackerLink {
+  navigate: (screen: 'DataTracker') => void;
+}
+
+export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {
   const { accounts, totalBalance } = useAccounts();
   const budget = useBudget();
   const airtime = useAirtime();
@@ -130,6 +135,7 @@ export const DashboardScreen = () => {
             { withUnit: false },
           )}`}
           color={airtime.isOverMonthlyLimit ? palette.red : palette.green}
+          onPress={navigation ? () => navigation.navigate('DataTracker') : undefined}
         />
         <StatTile
           icon="trending-up"

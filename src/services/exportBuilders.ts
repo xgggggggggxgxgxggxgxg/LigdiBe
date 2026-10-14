@@ -22,6 +22,8 @@ const CSV_COLUMNS: ReadonlyArray<keyof Transaction> = [
   'balanceAfter',
   'reference',
   'note',
+  'dataVolumeMb',
+  'dataValidityDays',
   'source',
   'id',
   'parentId',

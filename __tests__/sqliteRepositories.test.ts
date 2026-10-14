@@ -20,6 +20,27 @@ describe('SQLite - migrations', () => {
     const [v] = await db.execute('PRAGMA user_version');
     expect(v.user_version).toBe(SCHEMA_VERSION);
   });
+
+  test('v2 → v3 : colonnes data ajoutées sans perte, volume relu', async () => {
+    const db = createNodeSqliteDatabase();
+    await db.execute('PRAGMA user_version = 0');
+    const { MIGRATIONS } = require('../src/data/database/schema');
+    for (const sql of [...MIGRATIONS[0], ...MIGRATIONS[1]]) {
+      await db.execute(sql);
+    }
+    await db.execute('PRAGMA user_version = 2');
+    await db.execute(
+      "INSERT INTO transactions (id, account_id, provider, type, amount, category, source, occurred_at, created_at) VALUES ('old', 'a', 'MOOV', 'EXPENSE', 5, 'Autre', 'SMS', '2026-01-01', '2026-01-01')",
+    );
+    expect(await runMigrations(db)).toBe(3);
+    const repos = createSqliteRepositories(db);
+    await repos.transactions.insertMany([
+      tx({ id: 'pass', type: 'AIRTIME_RECHARGE', dataVolumeMb: 1536, dataValidityDays: 0.04 }),
+    ]);
+    const all = await repos.transactions.listAll();
+    expect(all.find(t => t.id === 'old')).not.toHaveProperty('dataVolumeMb');
+    expect(all.find(t => t.id === 'pass')).toMatchObject({ dataVolumeMb: 1536, dataValidityDays: 0.04 });
+  });
 });
 
 describe('SQLite - dépôts', () => {

@@ -99,3 +99,42 @@ const buildIso = (y: number, mo: number, d: number, h: number, mi: number, s: nu
   }
   return `${y}-${pad(mo)}-${pad(d)}T${pad(h)}:${pad(mi)}:${pad(s)}`;
 };
+
+/**
+ * Volume d'un forfait internet en Mo : « 1Go », « 1,5 GB », « 500 Mo », « 750MB ».
+ * Retourne le plus grand volume cité (bonus inclus dans le libellé principal).
+ */
+export const parseDataVolumeMb = (text: string): number | undefined => {
+  const volumes = [...text.matchAll(/(\d+(?:[.,]\d+)?)\s*(Go|Gb|GB|Mo|Mb|MB|To|TB)\b/g)].map(m => {
+    const n = Number(m[1].replace(',', '.'));
+    const unit = m[2].toUpperCase();
+    return unit.startsWith('T') ? n * 1024 * 1024 : unit.startsWith('G') ? n * 1024 : n;
+  });
+  return volumes.length > 0 ? Math.max(...volumes) : undefined;
+};
+
+/** Durée de validité d'un forfait, en jours (« valable 30 jours », « pass jour », « 24h », « semaine »). */
+export const parseValidityDays = (text: string): number | undefined => {
+  const explicit = text.match(
+    /(?:valable|validit[ée]|valide|dur[ée]e)\s*:?\s*(?:de\s+|pendant\s+)?(\d+)\s*(jours?|j\b|h\b|heures?|semaines?|mois)/i,
+  );
+  const loose = explicit ?? text.match(/\b(\d+)\s*(jours?|heures?|h|semaines?|mois)\b/i);
+  if (loose) {
+    const n = Number(loose[1]);
+    const unit = loose[2].toLowerCase();
+    if (unit.startsWith('h')) {
+      return Math.round((n / 24) * 100) / 100;
+    }
+    return unit.startsWith('sem') ? n * 7 : unit === 'mois' ? n * 30 : n;
+  }
+  if (/\b(?:pass|forfait)\s+(?:internet\s+)?(?:jour|journalier|day)\b/i.test(text)) {
+    return 1;
+  }
+  if (/\b(?:hebdo(?:madaire)?|semaine|week)\b/i.test(text)) {
+    return 7;
+  }
+  if (/\b(?:mensuel|mois|month)\b/i.test(text)) {
+    return 30;
+  }
+  return undefined;
+};

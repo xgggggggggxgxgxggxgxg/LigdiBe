@@ -31,6 +31,7 @@ import {
   mergeFamilyMembers,
 } from '../../domain/usecases/FamilyMembers';
 import { WIDGET_SHOW_BALANCE_KEY } from '../../services/widget/WidgetService';
+import { MONTHLY_DATA_LIMIT_KEY } from '../../domain/usecases/DataTracker';
 import {
   decideRequest,
   FAMILY_REQUESTS_KEY,
@@ -83,6 +84,8 @@ export interface FinanceState {
   widgetShowBalance: boolean;
   /** « Ma famille » : proches dont les envois sont classés automatiquement. */
   familyMembers: FamilyMember[];
+  /** Plafond mensuel des forfaits internet en FCFA (0 = aucun). */
+  monthlyDataLimit: number;
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -141,6 +144,7 @@ export interface FinanceState {
    */
   addFamilyMembers(members: ReadonlyArray<Omit<FamilyMember, 'id'> & Partial<FamilyMember>>): Promise<number>;
   removeFamilyMember(memberId: string): Promise<void>;
+  setMonthlyDataLimit(amount: number): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -194,6 +198,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     solidarityBudget: 0,
     widgetShowBalance: false,
     familyMembers: [],
+    monthlyDataLimit: 0,
 
     async hydrate(now = new Date()) {
       try {
@@ -218,6 +223,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           solidarityBudget,
           widgetShowBalance,
           familyMembers,
+          monthlyDataLimit,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -237,6 +243,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
           r.settings.getJson<boolean>(WIDGET_SHOW_BALANCE_KEY, false),
           r.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, []),
+          r.settings.getJson<number>(MONTHLY_DATA_LIMIT_KEY, 0),
         ]);
         set({
           ready: true,
@@ -260,6 +267,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           solidarityBudget,
           widgetShowBalance,
           familyMembers,
+          monthlyDataLimit,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -664,6 +672,12 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const familyMembers = get().familyMembers.filter(m => m.id !== memberId);
       await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
       set({ familyMembers });
+    },
+
+    async setMonthlyDataLimit(amount) {
+      const r = await repos();
+      await r.settings.setJson(MONTHLY_DATA_LIMIT_KEY, amount);
+      set({ monthlyDataLimit: amount });
     },
 
     async setWidgetShowBalance(show) {

@@ -4,8 +4,10 @@ import {
   normalizeSms,
   parseAmount,
   parseAmountOrZero,
+  parseDataVolumeMb,
   parseFrenchDate,
   parseOrangeTransIdDate,
+  parseValidityDays,
 } from './textUtils';
 import { isSensitiveSecuritySms, isWhitelistedSender, providerFromSender } from './securityFilters';
 
@@ -26,6 +28,12 @@ export interface ParsedSms {
   /** Date de l'opération telle qu'annoncée par l'opérateur (ISO local). */
   occurredAt?: string;
   currency: 'XOF';
+  /** Recharge : crédit d'appel (VOICE) ou forfait internet (DATA). */
+  airtimeKind?: 'VOICE' | 'DATA';
+  /** Forfait internet : volume en Mo. */
+  dataVolumeMb?: number;
+  /** Forfait internet : validité en jours. */
+  dataValidityDays?: number;
   /** Identifiant de la règle ayant matché (débogage / télémétrie locale). */
   ruleId: string;
   rawSms: string;
@@ -79,6 +87,13 @@ const orangeRef = (s: string) => field(s, /Trans(?:action)?\s*id\s*:\s*([A-Z0-9]
 const waveBalance = (s: string) => parseAmount(field(s, new RegExp(`Solde(?: Wave)?\\s*:\\s*${AMT}${CUR}`, 'i')));
 const waveRef = (s: string) => field(s, /Avec UBA\s+([A-Za-z0-9-]+)/i);
 const waveDate = (s: string) => parseFrenchDate(field(s, /(\d{2}\/\d{2}\/\d{4}\s*(?:à|a)?\s*\d{1,2}:\d{2})/));
+
+/** Forfait débité du crédit d'appel / solde principal. */
+const PAID_WITH_CREDIT =
+  /(?:cr[ée]dit (?:principal|de communication|d'appel)|solde (?:principal|cr[ée]dit|d'appel|de communication|unit[ée]s)|compte principal|d[ée]bit[ée]e? (?:de|sur) (?:votre|ton) cr[ée]dit|avec (?:votre|ton) cr[ée]dit)/i;
+/** Paiement par portefeuille électronique : c'est une vraie sortie d'argent. */
+const MONEY_WALLET = /\b(?:money|wave|flooz|momo)\b/i;
+const DATA_HINT = /\b(?:internet|data|web)\b|\d\s*(?:Go|Mo|GB|MB|To)\b/i;
 
 const withOrangeDate = (d: Draft): Draft => ({ ...d, occurredAt: parseOrangeTransIdDate(d.reference) });
 
@@ -385,15 +400,23 @@ const RULES: ReadonlyArray<ParserRule> = [
   {
     id: 'GENERIC_AIRTIME',
     pattern: new RegExp(
-      `(?:recharg[ée]|achat (?:de |d'un )?(?:cr[ée]dit|forfait|pass)|(?:forfait|pass) (?:internet|data|appel))[^\\n]*?${AMT}${CUR}`,
+      `(?:recharg[ée]|achat (?:de |d'un |du )?(?:cr[ée]dit|forfait|pass)|souscri\\w* (?:au |à |a )?(?:un |une |le |la |l')?(?:forfait|pass|offre internet|bundle)|(?:forfait|pass) (?:internet|data|appel|jour|semaine|mois|\\d))[^\\n]*?${AMT}${CUR}`,
       'i',
     ),
-    build: (m, s) => ({
-      type: 'AIRTIME_RECHARGE',
-      amount: parseAmountOrZero(m[1]),
-      balanceAfter: parseAmount(field(s, new RegExp(`solde[^\\d]{0,40}${AMT}${CUR}`, 'i'))),
-      reference: field(s, /(?:Trans(?:action)?\s*id|TID|Txn ID|Ref)\s*:\s*([A-Z0-9]+(?:\.[A-Z0-9]+)*)/i),
-    }),
+    build: (m, s) => {
+      // Payé avec le crédit d'appel (pas avec le portefeuille MoMo) : déjà compté lors de la recharge.
+      const paidWithCredit = PAID_WITH_CREDIT.test(s) && !MONEY_WALLET.test(s);
+      if (paidWithCredit) {
+        const isData = parseDataVolumeMb(s) !== undefined;
+        return { type: 'DATA_FROM_CREDIT', amount: isData ? parseAmountOrZero(m[1]) : 0 };
+      }
+      return {
+        type: 'AIRTIME_RECHARGE',
+        amount: parseAmountOrZero(m[1]),
+        balanceAfter: parseAmount(field(s, new RegExp(`solde[^\\d]{0,40}${AMT}${CUR}`, 'i'))),
+        reference: field(s, /(?:Trans(?:action)?\s*id|TID|Txn ID|Ref)\s*:\s*([A-Z0-9]+(?:\.[A-Z0-9]+)*)/i),
+      };
+    },
   },
 ];
 
@@ -444,10 +467,16 @@ export const parseTransactionSms = (rawSms: string, options: ParseOptions = {}):
     }
     const fee = draft.fee ?? 0;
     const tax = draft.tax ?? 0;
-    const isDebit = draft.type !== 'INCOME' && draft.type !== 'AGENT_DEPOSIT';
+    const isDebit = draft.type !== 'INCOME' && draft.type !== 'AGENT_DEPOSIT' && draft.type !== 'DATA_FROM_CREDIT';
     const total = draft.total ?? round(isDebit ? draft.amount + fee + tax : draft.amount);
+    const recharge = draft.type === 'AIRTIME_RECHARGE' || draft.type === 'DATA_FROM_CREDIT';
+    const volume = recharge ? parseDataVolumeMb(sms) : undefined;
+    const isData = recharge && (draft.type === 'DATA_FROM_CREDIT' || volume !== undefined || DATA_HINT.test(sms));
     return stripUndefined<ParsedSms>({
       ...draft,
+      airtimeKind: recharge ? (isData ? 'DATA' : 'VOICE') : undefined,
+      dataVolumeMb: isData ? volume : undefined,
+      dataValidityDays: isData ? parseValidityDays(sms) : undefined,
       provider,
       fee,
       tax,

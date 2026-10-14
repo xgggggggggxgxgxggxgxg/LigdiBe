@@ -20,10 +20,11 @@ import { exportJsonBackup, exportTransactionsCsv } from '../../services/export/E
 import { potentialSavings } from '../../domain/usecases/FeeComparator';
 import { FeeComparatorModal } from '../components/FeeComparatorModal';
 import { StatTile } from '../components/StatTile';
+import type { DataTrackerLink } from './DashboardScreen';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
 
-export const StatsScreen = () => {
+export const StatsScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {
   const transactions = useFinanceStore(s => s.transactions);
   const now = useFinanceStore(s => s.now);
   const getMonthTransactions = useFinanceStore(s => s.getMonthTransactions);
@@ -109,9 +110,12 @@ export const StatsScreen = () => {
           />
           <StatTile
             icon="cellphone-wireless"
-            label="Crédit d'appel"
+            label="Crédit & internet"
             value={formatFCFA(airtime)}
+            hint={navigation ? 'Voir le détail ›' : undefined}
             color={palette.orange}
+            onPress={navigation ? () => navigation.navigate('DataTracker') : undefined}
+            testID="airtime-stats-tile"
           />
         </View>
         <View style={styles.tiles}>

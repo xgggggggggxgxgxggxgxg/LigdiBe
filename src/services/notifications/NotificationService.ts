@@ -17,6 +17,13 @@ import { summarizeAirtime } from '../../domain/usecases/AirtimeTracker';
 import { calculateDailyBudget } from '../../domain/usecases/CalculateDailyBudget';
 import { counterpartyKey } from '../../domain/usecases/CategorizeTransaction';
 import { envelopeThresholdCrossed } from '../../domain/usecases/CategoryBudgets';
+import {
+  formatVolume,
+  isDataPurchase,
+  MONTHLY_DATA_LIMIT_KEY,
+  periodRange,
+  summarizeData,
+} from '../../domain/usecases/DataTracker';
 import { compareMonths, totalFees } from '../../domain/usecases/Statistics';
 import { applyRepayment, debtRemaining, findDebtForTransaction } from '../../domain/usecases/ManageDebts';
 import { LEARNED_CATEGORIES_KEY } from '../../domain/usecases/ProcessIncomingSms';
@@ -35,6 +42,7 @@ const MONTHLY_REPORT_ID = 'ligdibe-monthly-report';
 const FORECAST_REMINDER_ID = 'ligdibe-forecast-reminder';
 const EVENING_ID = 'ligdibe-evening';
 const AIRTIME_ALERT_KEY = (month: string) => `airtimeAlert:${month}`;
+const DATA_ALERT_KEY = (month: string) => `dataAlert:${month}`;
 
 export const ensureNotificationChannels = async (): Promise<void> => {
   await notifee.requestPermission();
@@ -262,6 +270,22 @@ export const notifyAfterRecording = async (
         `${airtime.monthlyRechargeCount} petites recharges ont dépassé ton plafond de ${formatFCFA(
           config.monthlyAirtimeLimit,
         )}. Un forfait mensuel serait peut-être moins cher.`,
+      );
+    }
+  }
+
+  if (isDataPurchase(main)) {
+    const limit = await repos.settings.getJson<number>(MONTHLY_DATA_LIMIT_KEY, 0);
+    const data = summarizeData(transactions, periodRange('MONTH', now));
+    const total = data.spent + data.fromCreditAmount;
+    if (limit > 0 && total > limit && !(await repos.settings.getJson<boolean>(DATA_ALERT_KEY(month), false))) {
+      await repos.settings.setJson(DATA_ALERT_KEY(month), true);
+      await notifyAlert(
+        'data-limit',
+        `🌐 Forfaits internet : ${formatFCFA(total)} ce mois`,
+        `${data.purchases} forfaits${
+          data.volumeMb > 0 ? ` (${formatVolume(data.volumeMb)})` : ''
+        } ont dépassé ton plafond de ${formatFCFA(limit)}. Un forfait mensuel serait peut-être plus avantageux.`,
       );
     }
   }

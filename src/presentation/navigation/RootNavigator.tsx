@@ -1,9 +1,11 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Icon, Text, useTheme } from 'react-native-paper';
 import { DashboardScreen } from '../screens/DashboardScreen';
+import { DataTrackerScreen } from '../screens/DataTrackerScreen';
 import { DebtsScreen } from '../screens/DebtsScreen';
 import { LockScreen } from '../screens/LockScreen';
 import { ForecastScreen } from '../screens/ForecastScreen';
@@ -22,7 +24,13 @@ export type RootTabParamList = {
   Réglages: undefined;
 };
 
+export type RootStackParamList = {
+  Onglets: undefined;
+  DataTracker: undefined;
+};
+
 const Tab = createBottomTabNavigator<RootTabParamList>();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const ICONS: Record<keyof RootTabParamList, string> = {
   Accueil: 'home-variant',
@@ -30,6 +38,24 @@ const ICONS: Record<keyof RootTabParamList, string> = {
   Carnet: 'notebook-outline',
   Stats: 'chart-donut',
   Réglages: 'cog-outline',
+};
+
+const Tabs = () => {
+  const theme = useTheme();
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarIcon: ({ color, size }) => <Icon source={ICONS[route.name]} color={color} size={size} />,
+      })}>
+      <Tab.Screen name="Accueil" component={DashboardScreen} />
+      <Tab.Screen name="Prévisionnel" component={ForecastScreen} />
+      <Tab.Screen name="Carnet" component={DebtsScreen} />
+      <Tab.Screen name="Stats" component={StatsScreen} />
+      <Tab.Screen name="Réglages" component={SettingsScreen} />
+    </Tab.Navigator>
+  );
 };
 
 export const RootNavigator = () => {
@@ -71,18 +97,10 @@ export const RootNavigator = () => {
           text: theme.colors.onSurface,
         },
       }}>
-      <Tab.Navigator
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarIcon: ({ color, size }) => <Icon source={ICONS[route.name]} color={color} size={size} />,
-        })}>
-        <Tab.Screen name="Accueil" component={DashboardScreen} />
-        <Tab.Screen name="Prévisionnel" component={ForecastScreen} />
-        <Tab.Screen name="Carnet" component={DebtsScreen} />
-        <Tab.Screen name="Stats" component={StatsScreen} />
-        <Tab.Screen name="Réglages" component={SettingsScreen} />
-      </Tab.Navigator>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Onglets" component={Tabs} />
+        <Stack.Screen name="DataTracker" component={DataTrackerScreen} options={{ animation: 'slide_from_right' }} />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };
