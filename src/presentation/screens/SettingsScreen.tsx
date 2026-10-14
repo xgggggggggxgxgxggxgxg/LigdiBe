@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Divider, IconButton, List, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, Card, Chip, Divider, IconButton, List, SegmentedButtons, Switch, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
+import type { DataTrackerLink } from './DashboardScreen';
 import { Field } from '../components/Field';
 import { formatFCFA } from '../../core/currency';
 import { generateId } from '../../core/id';
@@ -12,7 +13,6 @@ import { ensureNotificationChannels, scheduleDailyReminders } from '../../servic
 import { isValidPin, removePin, setPin } from '../../services/security/AppLock';
 import { hasSmsPermissions, isSmsSupported, requestSmsPermissions } from '../../services/sms/SmsBridge';
 import { importSmsBacklog } from '../../services/sms/smsIngestion';
-import { listBackupFiles, restoreBackupFile, type BackupFile } from '../../services/export/BackupService';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { CATEGORIES } from '../../core/categories';
@@ -23,7 +23,7 @@ import { palette } from '../theme/theme';
 
 const DAY_MS = 24 * 3600 * 1000;
 
-export const SettingsScreen = () => {
+export const SettingsScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {
   const config = useFinanceStore(s => s.budgetConfig);
   const saveBudgetConfig = useFinanceStore(s => s.saveBudgetConfig);
   const userName = useFinanceStore(s => s.userName);
@@ -52,12 +52,13 @@ export const SettingsScreen = () => {
   const [testResult, setTestResult] = useState<ParsedSms | null | undefined>();
   const themeMode = useFinanceStore(s => s.themeMode);
   const setThemeMode = useFinanceStore(s => s.setThemeMode);
+  const widgetShowBalance = useFinanceStore(s => s.widgetShowBalance);
+  const setWidgetShowBalance = useFinanceStore(s => s.setWidgetShowBalance);
   const pinEnabled = useLockStore(s => s.pinEnabled);
   const setPinEnabled = useLockStore(s => s.setPinEnabled);
   const [newPin, setNewPin] = useState('');
   const [limitCategory, setLimitCategory] = useState<string>(CATEGORIES.FOOD);
   const [limitAmount, setLimitAmount] = useState('');
-  const [backups, setBackups] = useState<BackupFile[] | undefined>();
 
   useEffect(() => {
     hasSmsPermissions()
@@ -93,7 +94,11 @@ export const SettingsScreen = () => {
       }
       const report = await importSmsBacklog(await getRepositories(), Date.now() - 90 * DAY_MS);
       await hydrate();
-      Alert.alert('Import terminé', `${report.recorded} opération(s) ajoutée(s), ${report.duplicates} déjà connue(s).`);
+      Alert.alert(
+        'Import terminé',
+        `${report.recorded} opération(s) ajoutée(s), ${report.duplicates} déjà connue(s).` +
+          (report.unrecognized > 0 ? ` ${report.unrecognized} SMS à vérifier sur l'accueil.` : ''),
+      );
     } catch (e) {
       Alert.alert('Import impossible', e instanceof Error ? e.message : String(e));
     } finally {
@@ -142,6 +147,21 @@ export const SettingsScreen = () => {
               ]}
             />
           </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title
+            title="Widget d'écran d'accueil"
+            subtitle="Appui long sur l'écran d'accueil › Widgets › LigdiBe"
+          />
+          <List.Item
+            title="Afficher mon patrimoine"
+            description="Masqué par défaut : seul le budget du jour est visible sur l'écran d'accueil."
+            left={props => <List.Icon {...props} icon="widgets-outline" />}
+            right={() => (
+              <Switch value={widgetShowBalance} onValueChange={setWidgetShowBalance} testID="widget-balance-switch" />
+            )}
+          />
         </Card>
 
         <Card style={styles.card}>
@@ -371,55 +391,27 @@ export const SettingsScreen = () => {
           </Card.Content>
         </Card>
 
-        <Card style={styles.card}>
+        <Card style={styles.card} testID="settings-backup-card">
           <Card.Title
-            title="Restaurer une sauvegarde"
-            subtitle="Nouveau téléphone ? Copie ton fichier LigdiBe_sauvegarde_….json dans Téléchargements"
+            title="Sauvegarde & transfert"
+            subtitle="Exporter en ZIP, envoyer, importer sur un nouveau téléphone"
           />
-          <Card.Actions>
-            <Button
-              icon="folder-search-outline"
-              onPress={async () => {
-                const files = await listBackupFiles();
-                setBackups(files);
-                if (files.length === 0) {
-                  Alert.alert(
-                    'Aucune sauvegarde trouvée',
-                    'Exporte une sauvegarde JSON depuis l’onglet Stats de ton ancien téléphone.',
-                  );
-                }
-              }}>
-              Chercher
-            </Button>
-          </Card.Actions>
-          {backups?.map(f => (
-            <List.Item
-              key={f.path}
-              title={f.name.replace('LigdiBe_sauvegarde_', '').replace('.json', '')}
-              description={`${Math.round(f.size / 1024)} Ko`}
-              left={p => <List.Icon {...p} icon="backup-restore" />}
-              onPress={() =>
-                Alert.alert('Restaurer cette sauvegarde ?', 'Les données seront fusionnées avec celles du téléphone.', [
-                  { text: 'Annuler', style: 'cancel' },
-                  {
-                    text: 'Restaurer',
-                    onPress: async () => {
-                      try {
-                        const report = await restoreBackupFile(await getRepositories(), f.path);
-                        await hydrate();
-                        Alert.alert(
-                          'Restauration réussie ✅',
-                          `${report.transactions} opérations, ${report.debts} dettes récupérées.`,
-                        );
-                      } catch (e) {
-                        Alert.alert('Restauration impossible', e instanceof Error ? e.message : String(e));
-                      }
-                    },
-                  },
-                ])
-              }
-            />
-          ))}
+          <List.Item
+            title="Réanalyser mes SMS"
+            description="Apprentissage guidé : classe l'historique un SMS à la fois"
+            left={props => <List.Icon {...props} icon="school-outline" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation?.navigate('Learning')}
+            testID="open-learning-settings"
+          />
+          <List.Item
+            title="Ouvrir"
+            description="Export ZIP / CSV / JSON et restauration"
+            left={props => <List.Icon {...props} icon="folder-zip-outline" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation?.navigate('Backup')}
+            testID="open-backup-settings"
+          />
         </Card>
 
         <Card style={styles.card}>

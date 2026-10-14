@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Chip, FAB, IconButton, Text } from 'react-native-paper';
+import { Banner, Chip, FAB, IconButton, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { formatFCFA } from '../../core/currency';
 import type { Transaction } from '../../domain/models/Transaction';
@@ -8,9 +8,11 @@ import { AddTransactionModal } from '../components/AddTransactionModal';
 import { BalanceCard } from '../components/BalanceCard';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { DailyBudgetCard } from '../components/DailyBudgetCard';
+import { SearchModal } from '../components/SearchModal';
 import { StatTile } from '../components/StatTile';
 import { TransactionDetailModal } from '../components/TransactionDetailModal';
 import { TransactionItem } from '../components/TransactionItem';
+import { UnrecognizedSmsModal } from '../components/UnrecognizedSmsModal';
 import { useAccounts } from '../hooks/useAccounts';
 import { useAirtime } from '../hooks/useAirtime';
 import { useBudget } from '../hooks/useBudget';
@@ -46,7 +48,12 @@ export const filterTransactions = (txs: ReadonlyArray<Transaction>, f: QuickFilt
     }
   });
 
-export const DashboardScreen = () => {
+/** Navigation minimale (l'écran est aussi rendu hors navigateur dans les tests). */
+export interface DataTrackerLink {
+  navigate: (screen: 'DataTracker' | 'Backup' | 'Learning') => void;
+}
+
+export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {
   const { accounts, totalBalance } = useAccounts();
   const budget = useBudget();
   const airtime = useAirtime();
@@ -54,6 +61,10 @@ export const DashboardScreen = () => {
   const userName = useFinanceStore(s => s.userName);
   const monthlyBudget = useFinanceStore(s => s.budgetConfig.monthlyBudget);
   const hydrate = useFinanceStore(s => s.hydrate);
+  const unrecognizedCount = useFinanceStore(s => s.unrecognizedSms.length);
+  const [reviewing, setReviewing] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const learningStatus = useFinanceStore(s => s.learningStatus);
   const [filter, setFilter] = useState<QuickFilter>('ALL');
   const [hidden, setHidden] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -75,12 +86,21 @@ export const DashboardScreen = () => {
           <Text variant="titleMedium" style={styles.heroText}>
             {userName ? `Bonjour ${userName} 👋🏾` : 'Bonjour 👋🏾'}
           </Text>
-          <IconButton
-            icon={hidden ? 'eye-off' : 'eye'}
-            iconColor="#fff"
-            onPress={() => setHidden(h => !h)}
-            testID="toggle-hide"
-          />
+          <View style={styles.heroActions}>
+            <IconButton
+              icon="magnify"
+              iconColor="#fff"
+              onPress={() => setSearching(true)}
+              accessibilityLabel="Rechercher une opération"
+              testID="open-search"
+            />
+            <IconButton
+              icon={hidden ? 'eye-off' : 'eye'}
+              iconColor="#fff"
+              onPress={() => setHidden(h => !h)}
+              testID="toggle-hide"
+            />
+          </View>
         </View>
         <Text variant="labelLarge" style={styles.heroMuted}>
           Patrimoine total (MoMo + Banque + Poche)
@@ -94,6 +114,30 @@ export const DashboardScreen = () => {
           <BalanceCard key={a.id} account={a} hidden={hidden} />
         ))}
       </ScrollView>
+      <Banner
+        visible={learningStatus !== 'DONE' && navigation !== undefined}
+        icon="school-outline"
+        actions={[
+          {
+            label: learningStatus === 'PAUSED' ? 'Reprendre' : 'Commencer',
+            onPress: () => navigation?.navigate('Learning'),
+            testID: 'open-learning',
+          },
+        ]}
+        style={styles.banner}>
+        {learningStatus === 'PAUSED'
+          ? 'Apprentissage guidé en pause : reprends là où tu t’étais arrêté.'
+          : 'Classe ton historique SMS en quelques taps : LigdiBe apprend tes habitudes.'}
+      </Banner>
+      <Banner
+        visible={unrecognizedCount > 0}
+        icon="message-alert-outline"
+        actions={[{ label: 'Vérifier', onPress: () => setReviewing(true), testID: 'review-unrecognized' }]}
+        style={styles.banner}>
+        {`${unrecognizedCount} SMS opérateur non reconnu${unrecognizedCount > 1 ? 's' : ''} : ajoute-le${
+          unrecognizedCount > 1 ? 's' : ''
+        } pour garder des soldes justes.`}
+      </Banner>
       <DailyBudgetCard budget={budget} streak={budget.streak} />
       <ChallengeCard />
       <View style={styles.tiles}>
@@ -107,6 +151,7 @@ export const DashboardScreen = () => {
             { withUnit: false },
           )}`}
           color={airtime.isOverMonthlyLimit ? palette.red : palette.green}
+          onPress={navigation ? () => navigation.navigate('DataTracker') : undefined}
         />
         <StatTile
           icon="trending-up"
@@ -158,6 +203,15 @@ export const DashboardScreen = () => {
       />
       <FAB icon="plus" label="Dépense cash" style={styles.fab} onPress={() => setAdding(true)} testID="fab-add" />
       <AddTransactionModal visible={adding} onDismiss={() => setAdding(false)} />
+      <SearchModal
+        visible={searching}
+        onDismiss={() => setSearching(false)}
+        onSelect={t => {
+          setSearching(false);
+          setSelected(t);
+        }}
+      />
+      <UnrecognizedSmsModal visible={reviewing} onDismiss={() => setReviewing(false)} />
       <TransactionDetailModal transaction={selected} onDismiss={() => setSelected(undefined)} />
     </Screen>
   );
@@ -172,10 +226,12 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
   },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroActions: { flexDirection: 'row' },
   heroText: { color: '#fff' },
   heroMuted: { color: '#fff', opacity: 0.8 },
   total: { color: '#fff', fontWeight: '800' },
   carousel: { paddingHorizontal: 16, marginTop: -18, paddingBottom: 4 },
+  banner: { marginHorizontal: 16, marginTop: 12, borderRadius: 16 },
   tiles: { flexDirection: 'row', gap: 10, marginHorizontal: 16, marginTop: 12 },
   filters: { paddingHorizontal: 16, paddingVertical: 12, gap: 6 },
   filter: { marginRight: 4 },

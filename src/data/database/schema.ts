@@ -91,6 +91,11 @@ export const MIGRATIONS: ReadonlyArray<ReadonlyArray<string>> = [
       created_at TEXT NOT NULL
     )`,
   ],
+  // v3 — forfaits internet : volume (Mo) et validité (jours)
+  [
+    'ALTER TABLE transactions ADD COLUMN data_volume_mb REAL',
+    'ALTER TABLE transactions ADD COLUMN data_validity_days REAL',
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

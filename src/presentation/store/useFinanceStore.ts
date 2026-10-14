@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CATEGORIES } from '../../core/categories';
 import { monthKey, nextMonthKey, toLocalIso } from '../../core/dates';
-import { generateId } from '../../core/id';
+import { fingerprint, generateId } from '../../core/id';
 import { CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../../domain/models/Account';
 import { DEFAULT_BUDGET_CONFIG, type BudgetConfig } from '../../domain/models/Budget';
 import type { Debt } from '../../domain/models/Debt';
@@ -21,11 +21,30 @@ import {
   type IncomingSms,
   type ProcessSmsResult,
 } from '../../domain/usecases/ProcessIncomingSms';
+import { UNRECOGNIZED_SMS_KEY, type UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
+import type { FamilyMember } from '../../domain/models/FamilyMember';
+import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import {
+  FAMILY_MEMBERS_KEY,
+  familyPhoneTails,
+  isFamilyPhone,
+  mergeFamilyMembers,
+} from '../../domain/usecases/FamilyMembers';
+import { WIDGET_SHOW_BALANCE_KEY } from '../../services/widget/WidgetService';
+import { MONTHLY_DATA_LIMIT_KEY } from '../../domain/usecases/DataTracker';
+import { LEARNING_DONE_KEY, LEARNING_SESSION_KEY } from '../../domain/usecases/LearningQueue';
+import {
+  decideRequest,
+  FAMILY_REQUESTS_KEY,
+  SOLIDARITY_BUDGET_KEY,
+  type ReplyKind,
+} from '../../domain/usecases/FamilySolidarity';
 
 const PAID_FIXED_KEY = (month: string) => `paidFixed:${month}`;
 const ONBOARDED_KEY = 'onboarded';
 const USER_NAME_KEY = 'userName';
 const THEME_KEY = 'themeMode';
+export const CUSTOM_CATEGORIES_KEY = 'customCategories';
 
 export interface ManualTransactionInput {
   accountId: string;
@@ -35,6 +54,8 @@ export interface ManualTransactionInput {
   note?: string;
   counterpartyName?: string;
   occurredAt?: Date;
+  /** SMS d'origine (opération saisie depuis un SMS non reconnu). */
+  rawSms?: string;
 }
 
 export interface FinanceState {
@@ -56,6 +77,21 @@ export interface FinanceState {
   onboarded: boolean;
   extraSenders: string[];
   themeMode: ThemeMode;
+  /** SMS opérateur au format inconnu, en attente de saisie manuelle. */
+  unrecognizedSms: UnrecognizedSms[];
+  familyRequests: FamilyRequest[];
+  /** Budget solidarité mensuel (0 = non défini). */
+  solidarityBudget: number;
+  /** Afficher le patrimoine total sur le widget d'écran d'accueil (masqué par défaut). */
+  widgetShowBalance: boolean;
+  /** « Ma famille » : proches dont les envois sont classés automatiquement. */
+  familyMembers: FamilyMember[];
+  /** Plafond mensuel des forfaits internet en FCFA (0 = aucun). */
+  monthlyDataLimit: number;
+  /** Catégories créées par l'utilisateur (en plus des catégories standard). */
+  customCategories: string[];
+  /** Apprentissage guidé : jamais fait, en pause (brouillon) ou terminé au moins une fois. */
+  learningStatus: 'NEVER' | 'PAUSED' | 'DONE';
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -89,8 +125,34 @@ export interface FinanceState {
   setUserName(userName: string): Promise<void>;
   /** Transactions d'un mois quelconque (depuis la mémoire si disponible, sinon la base). */
   getMonthTransactions(month: string): Promise<Transaction[]>;
+  /** Tout l'historique (recherche), y compris au-delà de la fenêtre chargée en mémoire. */
+  loadAllTransactions(): Promise<Transaction[]>;
   setExtraSenders(senders: string[]): Promise<void>;
   setThemeMode(mode: ThemeMode): Promise<void>;
+  /** Transforme un SMS non reconnu en opération manuelle puis le retire de la file. */
+  resolveUnrecognizedSms(smsId: string, input: ManualTransactionInput): Promise<Transaction>;
+  dismissUnrecognizedSms(smsId: string): Promise<void>;
+
+  saveFamilyRequest(
+    input: Pick<FamilyRequest, 'contactName' | 'amount'> & Partial<Pick<FamilyRequest, 'phone' | 'reason' | 'id'>>,
+  ): Promise<void>;
+  /**
+   * Décide d'une demande. Pour un don : `accountId` crée la dépense (espèces…) ;
+   * sans compte, l'envoi MoMo récent du même montant est rattaché et reclassé « Famille ».
+   */
+  decideFamilyRequest(requestId: string, kind: ReplyKind, givenAmount?: number, accountId?: string): Promise<void>;
+  deleteFamilyRequest(requestId: string): Promise<void>;
+  setSolidarityBudget(amount: number): Promise<void>;
+  setWidgetShowBalance(show: boolean): Promise<void>;
+  /**
+   * Ajoute des proches (sans doublon) et reclasse en « Famille » leurs envois déjà
+   * enregistrés comme simples transferts. Retourne le nombre d'opérations reclassées.
+   */
+  addFamilyMembers(members: ReadonlyArray<Omit<FamilyMember, 'id'> & Partial<FamilyMember>>): Promise<number>;
+  removeFamilyMember(memberId: string): Promise<void>;
+  setMonthlyDataLimit(amount: number): Promise<void>;
+  /** Crée une catégorie (sans doublon, insensible à la casse) ; retourne son nom final. */
+  addCustomCategory(name: string): Promise<string>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -101,6 +163,9 @@ let repositoriesProvider: () => Promise<Repositories> = async () => {
 export const configureFinanceStore = (provider: () => Promise<Repositories>) => {
   repositoriesProvider = provider;
 };
+
+/** Dépôts configurés (partagés avec les autres stores, ex. apprentissage guidé). */
+export const getConfiguredRepositories = (): Promise<Repositories> => repositoriesProvider();
 
 const loadWindowStart = (now: Date): string => {
   const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
@@ -139,6 +204,14 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     onboarded: false,
     extraSenders: [],
     themeMode: 'system',
+    unrecognizedSms: [],
+    familyRequests: [],
+    solidarityBudget: 0,
+    widgetShowBalance: false,
+    familyMembers: [],
+    monthlyDataLimit: 0,
+    customCategories: [],
+    learningStatus: 'NEVER',
 
     async hydrate(now = new Date()) {
       try {
@@ -158,6 +231,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           extraSenders,
           savingsGoals,
           themeMode,
+          unrecognizedSms,
+          familyRequests,
+          solidarityBudget,
+          widgetShowBalance,
+          familyMembers,
+          monthlyDataLimit,
+          customCategories,
+          learningSession,
+          learningDoneAt,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -172,6 +254,15 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []),
           r.savingsGoals.getAll(),
           r.settings.getJson<ThemeMode>(THEME_KEY, 'system'),
+          r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []),
+          r.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
+          r.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
+          r.settings.getJson<boolean>(WIDGET_SHOW_BALANCE_KEY, false),
+          r.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, []),
+          r.settings.getJson<number>(MONTHLY_DATA_LIMIT_KEY, 0),
+          r.settings.getJson<string[]>(CUSTOM_CATEGORIES_KEY, []),
+          r.settings.getJson<{ items: unknown[] } | null>(LEARNING_SESSION_KEY, null),
+          r.settings.getJson<string | null>(LEARNING_DONE_KEY, null),
         ]);
         set({
           ready: true,
@@ -190,6 +281,14 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           extraSenders,
           savingsGoals,
           themeMode,
+          unrecognizedSms,
+          familyRequests,
+          solidarityBudget,
+          widgetShowBalance,
+          familyMembers,
+          monthlyDataLimit,
+          customCategories,
+          learningStatus: learningSession?.items.length ? 'PAUSED' : learningDoneAt ? 'DONE' : 'NEVER',
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -202,6 +301,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       if (result.status === 'RECORDED') {
         await Promise.all([reloadTransactions(), reloadAccounts()]);
         await get().autoCheckPlannedItems();
+      } else if (result.status === 'UNRECOGNIZED') {
+        set({ unrecognizedSms: await r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []) });
       }
       return result;
     },
@@ -224,6 +325,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
         category: input.category,
         note: input.note,
         counterpartyName: input.counterpartyName,
+        rawSms: input.rawSms,
+        // Empêche un ré-import ultérieur du même SMS de créer un doublon.
+        smsFingerprint: input.rawSms ? fingerprint(input.rawSms) : undefined,
         source: 'MANUAL',
         occurredAt: toLocalIso(input.occurredAt ?? new Date()),
         createdAt: nowIso,
@@ -462,6 +566,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       return r.transactions.listBetween(`${month}-01`, `${nextMonthKey(month)}-01`);
     },
 
+    async loadAllTransactions() {
+      const r = await repos();
+      return r.transactions.listAll();
+    },
+
     async setUserName(userName) {
       const r = await repos();
       await r.settings.setJson(USER_NAME_KEY, userName);
@@ -472,6 +581,145 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.settings.setJson(THEME_KEY, mode);
       set({ themeMode: mode });
+    },
+
+    async resolveUnrecognizedSms(smsId, input) {
+      const pending = get().unrecognizedSms.find(u => u.id === smsId);
+      const tx = await get().addManualTransaction({
+        ...input,
+        rawSms: input.rawSms ?? pending?.body,
+        occurredAt: input.occurredAt ?? (pending ? new Date(pending.receivedAt) : undefined),
+      });
+      await get().dismissUnrecognizedSms(smsId);
+      return tx;
+    },
+
+    async dismissUnrecognizedSms(smsId) {
+      const r = await repos();
+      const unrecognizedSms = get().unrecognizedSms.filter(u => u.id !== smsId);
+      await r.settings.setJson(UNRECOGNIZED_SMS_KEY, unrecognizedSms);
+      set({ unrecognizedSms });
+    },
+
+    async saveFamilyRequest(input) {
+      const r = await repos();
+      const existing = get().familyRequests.find(f => f.id === input.id);
+      const request: FamilyRequest = {
+        status: 'PENDING',
+        givenAmount: 0,
+        createdAt: toLocalIso(new Date()),
+        ...existing,
+        ...input,
+        id: input.id ?? generateId('fam'),
+      };
+      const familyRequests = [request, ...get().familyRequests.filter(f => f.id !== request.id)];
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async decideFamilyRequest(requestId, kind, givenAmount = 0, accountId) {
+      const r = await repos();
+      const request = get().familyRequests.find(f => f.id === requestId);
+      if (!request) {
+        return;
+      }
+      const now = new Date();
+      let decided = decideRequest(request, kind, givenAmount, toLocalIso(now));
+      if (decided.givenAmount > 0) {
+        if (accountId) {
+          const tx = await get().addManualTransaction({
+            accountId,
+            type: 'EXPENSE',
+            amount: decided.givenAmount,
+            category: CATEGORIES.FAMILY,
+            counterpartyName: request.contactName,
+            note: request.reason,
+          });
+          decided = { ...decided, transactionId: tx.id };
+        } else {
+          const since = toLocalIso(new Date(now.getTime() - 3 * 24 * 3600 * 1000));
+          const sent = get()
+            .transactions.filter(t => t.type === 'EXPENSE' && t.amount === decided.givenAmount && t.occurredAt >= since)
+            .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0];
+          if (sent) {
+            await get().recategorize(sent.id, CATEGORIES.FAMILY, true);
+            decided = { ...decided, transactionId: sent.id };
+          }
+        }
+      }
+      const familyRequests = get().familyRequests.map(f => (f.id === requestId ? decided : f));
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async deleteFamilyRequest(requestId) {
+      const r = await repos();
+      const familyRequests = get().familyRequests.filter(f => f.id !== requestId);
+      await r.settings.setJson(FAMILY_REQUESTS_KEY, familyRequests);
+      set({ familyRequests });
+    },
+
+    async setSolidarityBudget(amount) {
+      const r = await repos();
+      await r.settings.setJson(SOLIDARITY_BUDGET_KEY, amount);
+      set({ solidarityBudget: amount });
+    },
+
+    async addFamilyMembers(input) {
+      const r = await repos();
+      const added = input.map(m => ({ ...m, id: m.id ?? generateId('member'), name: m.name.trim() }));
+      const familyMembers = mergeFamilyMembers(get().familyMembers, added);
+      await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
+      set({ familyMembers });
+      const tails = familyPhoneTails(added);
+      const toReclassify = get().transactions.filter(
+        t =>
+          t.type === 'EXPENSE' &&
+          (t.category === CATEGORIES.TRANSFER || t.category === CATEGORIES.OTHER) &&
+          isFamilyPhone(t.counterpartyPhone, tails),
+      );
+      for (const t of toReclassify) {
+        await r.transactions.update(t.id, { category: CATEGORIES.FAMILY });
+      }
+      const ids = new Set(toReclassify.map(t => t.id));
+      set(st => ({
+        transactions: st.transactions.map(t => (ids.has(t.id) ? { ...t, category: CATEGORIES.FAMILY } : t)),
+      }));
+      return toReclassify.length;
+    },
+
+    async removeFamilyMember(memberId) {
+      const r = await repos();
+      const familyMembers = get().familyMembers.filter(m => m.id !== memberId);
+      await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
+      set({ familyMembers });
+    },
+
+    async addCustomCategory(name) {
+      const clean = name.replace(/\s+/g, ' ').trim();
+      const existing = [...Object.values(CATEGORIES), ...get().customCategories].find(
+        c => c.toLowerCase() === clean.toLowerCase(),
+      );
+      if (existing || !clean) {
+        return existing ?? clean;
+      }
+      const r = await repos();
+      const customCategories = [...get().customCategories, clean];
+      await r.settings.setJson(CUSTOM_CATEGORIES_KEY, customCategories);
+      set({ customCategories });
+      return clean;
+    },
+
+    async setMonthlyDataLimit(amount) {
+      const r = await repos();
+      await r.settings.setJson(MONTHLY_DATA_LIMIT_KEY, amount);
+      set({ monthlyDataLimit: amount });
+    },
+
+    async setWidgetShowBalance(show) {
+      const r = await repos();
+      await r.settings.setJson(WIDGET_SHOW_BALANCE_KEY, show);
+      set({ widgetShowBalance: show });
     },
 
     async setExtraSenders(senders) {

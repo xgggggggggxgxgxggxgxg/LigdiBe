@@ -3,10 +3,20 @@ import { roundMoney } from '../../core/currency';
 import { toLocalIso } from '../../core/dates';
 import { fingerprint, generateId } from '../../core/id';
 import { parseTransactionSms, type ParsedSms } from '../../data/parser/SmsParserEngine';
+import { isSensitiveSecuritySms, isWhitelistedSender } from '../../data/parser/securityFilters';
 import { accountIdForProvider, CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../models/Account';
 import type { Provider, Transaction } from '../models/Transaction';
 import type { AccountRepository, SettingsRepository, TransactionRepository } from '../repositories';
+import type { FamilyMember } from '../models/FamilyMember';
 import { autoCategorize } from './CategorizeTransaction';
+import { FAMILY_MEMBERS_KEY, familyPhoneTails } from './FamilyMembers';
+import {
+  enqueueUnrecognized,
+  looksLikeFinancialSms,
+  toUnrecognizedSms,
+  UNRECOGNIZED_SMS_KEY,
+  type UnrecognizedSms,
+} from './UnrecognizedSms';
 
 export interface LedgerEntries {
   transactions: Transaction[];
@@ -14,7 +24,7 @@ export interface LedgerEntries {
   accounts: Account[];
 }
 
-const PROVIDER_LABELS: Record<Provider, string> = {
+export const PROVIDER_LABELS: Record<Provider, string> = {
   MOOV: 'Moov Money',
   ORANGE: 'Orange Money',
   UBA_WAVE: 'Wave / UBA',
@@ -53,7 +63,11 @@ export const buildLedgerEntries = (
   parsed: ParsedSms,
   accounts: ReadonlyArray<Account>,
   receivedAt: Date,
-  options: { learnedCategories?: Readonly<Record<string, string>>; idGen?: (p: string) => string } = {},
+  options: {
+    learnedCategories?: Readonly<Record<string, string>>;
+    familyTails?: ReadonlySet<string>;
+    idGen?: (p: string) => string;
+  } = {},
 ): LedgerEntries => {
   const idGen = options.idGen ?? generateId;
   const nowIso = toLocalIso(receivedAt);
@@ -71,7 +85,7 @@ export const buildLedgerEntries = (
     tax: parsed.tax,
     counterpartyName: parsed.counterpartyName ?? parsed.merchantOrRecipient,
     counterpartyPhone: parsed.counterpartyPhone,
-    category: autoCategorize(parsed, options.learnedCategories),
+    category: autoCategorize(parsed, options.learnedCategories, options.familyTails),
     balanceAfter: parsed.balanceAfter,
     reference: parsed.reference,
     rawSms: parsed.rawSms,
@@ -79,8 +93,20 @@ export const buildLedgerEntries = (
     source: 'SMS',
     occurredAt,
     createdAt: nowIso,
+    dataVolumeMb: parsed.dataVolumeMb,
+    dataValidityDays: parsed.dataValidityDays,
   };
+  if (main.dataVolumeMb === undefined) {
+    delete main.dataVolumeMb;
+  }
+  if (main.dataValidityDays === undefined) {
+    delete main.dataValidityDays;
+  }
   const transactions: Transaction[] = [main];
+  if (parsed.type === 'DATA_FROM_CREDIT') {
+    // Forfait payé avec le crédit d'appel : on suit le volume, aucun solde MoMo ne bouge.
+    return { transactions, accounts: [] };
+  }
 
   const charges = roundMoney(parsed.fee + parsed.tax);
   if (charges > 0) {
@@ -169,6 +195,8 @@ export const buildLedgerEntries = (
 
 export type ProcessSmsResult =
   | { status: 'IGNORED' }
+  /** Expéditeur agréé mais format inconnu : SMS mis de côté pour saisie manuelle. */
+  | { status: 'UNRECOGNIZED'; pending: UnrecognizedSms }
   | { status: 'DUPLICATE'; parsed: ParsedSms }
   | { status: 'RECORDED'; parsed: ParsedSms; entries: LedgerEntries };
 
@@ -196,18 +224,20 @@ export class ProcessIncomingSmsUseCase {
     const extraSenders = await this.repos.settings.getJson<string[]>(EXTRA_SENDERS_KEY, []);
     const parsed = parseTransactionSms(sms.body, { sender: sms.sender, extraSenders });
     if (!parsed) {
-      return { status: 'IGNORED' };
+      return this.keepUnrecognized(sms, extraSenders);
     }
     const duplicate = parsed.reference
       ? await this.repos.transactions.existsByReference(parsed.provider, parsed.reference)
       : await this.repos.transactions.existsBySmsFingerprint(fingerprint(parsed.rawSms));
     if (duplicate) {
+      await this.refreshBalanceFromDuplicate(parsed, sms.receivedAt ?? new Date());
       return { status: 'DUPLICATE', parsed };
     }
     const learned = await this.repos.settings.getJson<Record<string, string>>(LEARNED_CATEGORIES_KEY, {});
     const accounts = await this.repos.accounts.getAll();
     const entries = buildLedgerEntries(parsed, accounts, sms.receivedAt ?? new Date(), {
       learnedCategories: learned,
+      familyTails: familyPhoneTails(await this.repos.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, [])),
     });
     const write = async () => {
       await this.repos.transactions.insertMany(entries.transactions);
@@ -215,5 +245,38 @@ export class ProcessIncomingSmsUseCase {
     };
     await (this.repos.runInTransaction ? this.repos.runInTransaction(write) : write());
     return { status: 'RECORDED', parsed, entries };
+  }
+
+  /**
+   * Un même dépôt peut produire plusieurs SMS (Ecobank : 3) et seul l'un d'eux
+   * donne le solde : s'il arrive après, on met le solde du compte à jour sans
+   * réenregistrer l'opération.
+   */
+  private async refreshBalanceFromDuplicate(parsed: ParsedSms, receivedAt: Date): Promise<void> {
+    if (parsed.balanceAfter === undefined) {
+      return;
+    }
+    const accounts = await this.repos.accounts.getAll();
+    const account = accounts.find(a => a.id === accountIdForProvider(parsed.provider));
+    const at = parsed.occurredAt ?? toLocalIso(receivedAt);
+    if (account && (!account.updatedAt || at >= account.updatedAt)) {
+      await this.repos.accounts.saveMany([{ ...account, currentBalance: parsed.balanceAfter, updatedAt: at }]);
+    }
+  }
+
+  /** Conserve un SMS opérateur non analysé (jamais un code de sécurité ni un expéditeur inconnu). */
+  private async keepUnrecognized(sms: IncomingSms, extraSenders: string[]): Promise<ProcessSmsResult> {
+    if (
+      !sms.sender ||
+      !isWhitelistedSender(sms.sender, extraSenders) ||
+      isSensitiveSecuritySms(sms.body) ||
+      !looksLikeFinancialSms(sms.body)
+    ) {
+      return { status: 'IGNORED' };
+    }
+    const pending = toUnrecognizedSms(sms.body, sms.sender, toLocalIso(sms.receivedAt ?? new Date()));
+    const queue = await this.repos.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []);
+    await this.repos.settings.setJson(UNRECOGNIZED_SMS_KEY, enqueueUnrecognized(queue, pending));
+    return { status: 'UNRECOGNIZED', pending };
   }
 }

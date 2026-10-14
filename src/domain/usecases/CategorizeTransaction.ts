@@ -1,5 +1,6 @@
 import { CATEGORIES } from '../../core/categories';
 import type { ParsedSms } from '../../data/parser/SmsParserEngine';
+import { isFamilyPhone } from './FamilyMembers';
 
 /** Mots-clés marchands courants en Afrique de l'Ouest → catégorie. */
 const KEYWORD_RULES: ReadonlyArray<[RegExp, string]> = [
@@ -36,26 +37,36 @@ export const counterpartyKey = (p: {
  * Catégorisation automatique. Priorité :
  * 1. type d'opération (crédit, retrait, revenu),
  * 2. catégories apprises des corrections de l'utilisateur,
+ * 2 bis. numéro d'un proche enregistré dans « Ma famille »,
  * 3. mots-clés marchands,
  * 4. transfert vers une personne (numéro de téléphone), sinon « Autre ».
  */
 export const autoCategorize = (
-  parsed: Pick<ParsedSms, 'type' | 'counterpartyName' | 'counterpartyPhone' | 'merchantOrRecipient'>,
+  parsed: Pick<ParsedSms, 'type' | 'counterpartyName' | 'counterpartyPhone' | 'merchantOrRecipient'> &
+    Partial<Pick<ParsedSms, 'airtimeKind'>>,
   learned: Readonly<Record<string, string>> = {},
+  familyTails: ReadonlySet<string> = new Set(),
 ): string => {
   switch (parsed.type) {
     case 'AIRTIME_RECHARGE':
-      return CATEGORIES.AIRTIME;
+      return parsed.airtimeKind === 'DATA' ? CATEGORIES.DATA : CATEGORIES.AIRTIME;
+    case 'DATA_FROM_CREDIT':
+      return CATEGORIES.DATA;
     case 'CASH_WITHDRAWAL':
       return CATEGORIES.CASH_WITHDRAWAL;
     case 'AGENT_DEPOSIT':
       return CATEGORIES.MOMO_DEPOSIT;
     case 'INCOME':
-      return CATEGORIES.INCOME;
+      return /\bSALAIRE|\bPAIE\b|\bSALARY/i.test(`${parsed.merchantOrRecipient ?? ''} ${parsed.counterpartyName ?? ''}`)
+        ? CATEGORIES.SALARY
+        : CATEGORIES.INCOME;
   }
   const key = counterpartyKey(parsed);
   if (key && learned[key]) {
     return learned[key];
+  }
+  if (isFamilyPhone(parsed.counterpartyPhone, familyTails)) {
+    return CATEGORIES.FAMILY;
   }
   const text = `${parsed.merchantOrRecipient ?? ''} ${parsed.counterpartyName ?? ''}`;
   const rule = KEYWORD_RULES.find(([re]) => re.test(text));

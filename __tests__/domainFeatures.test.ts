@@ -22,6 +22,7 @@ import {
 } from '../src/domain/usecases/ManageDebts';
 import {
   buildInsights,
+  familySupport,
   compareMonths,
   spendingByCategory,
   topRecipients,
@@ -167,6 +168,21 @@ describe('Statistiques', () => {
     expect(spendingByCategory([])).toEqual([]);
     expect(buildInsights(txs).map(i => i.id)).toEqual(['fees', 'airtime', 'top-category']);
     expect(buildInsights([])).toEqual([]);
+  });
+
+  test('solidarité familiale : total, proches distincts, part des entrées', () => {
+    const family = [
+      tx({ amount: 10000, category: CATEGORIES.FAMILY, counterpartyName: 'Maman', counterpartyPhone: '70111111' }),
+      tx({ amount: 5000, category: CATEGORIES.FAMILY, counterpartyName: 'MAMAN', counterpartyPhone: '70111111' }),
+      tx({ amount: 2500, category: CATEGORIES.FAMILY, counterpartyName: 'Petit frère' }),
+    ];
+    expect(familySupport([...txs, ...family])).toEqual({ total: 17500, count: 3, people: 2, shareOfIncome: 0.35 });
+    expect(familySupport(family).shareOfIncome).toBe(0);
+    const insight = buildInsights([...txs, ...family]).find(i => i.id === 'family');
+    expect(insight?.message).toBe('🤝🏾 Tu as soutenu 2 proches : 17500 FCFA (35 % de tes entrées).');
+    expect(buildInsights(family.slice(0, 1)).find(i => i.id === 'family')?.message).toBe(
+      '🤝🏾 Tu as soutenu 1 proche : 10000 FCFA.',
+    );
   });
 });
 

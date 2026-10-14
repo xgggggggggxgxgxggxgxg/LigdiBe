@@ -1,8 +1,14 @@
 import { PermissionsAndroid, Platform } from 'react-native';
 import RNFS from 'react-native-fs';
 import { fileTimestamp, nextMonthKey, toLocalIso } from '../../core/dates';
+import type { Transaction } from '../../domain/models/Transaction';
 import type { Repositories } from '../../domain/repositories';
+import { buildBackupZip, bytesToBase64 } from '../archive/BackupArchive';
 import { buildJsonBackup, transactionsToCsv } from '../exportBuilders';
+import type { FamilyMember } from '../../domain/models/FamilyMember';
+import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import { FAMILY_MEMBERS_KEY } from '../../domain/usecases/FamilyMembers';
+import { FAMILY_REQUESTS_KEY, SOLIDARITY_BUDGET_KEY } from '../../domain/usecases/FamilySolidarity';
 
 export interface ExportResult {
   path: string;
@@ -16,7 +22,11 @@ const ensureLegacyWritePermission = async (): Promise<void> => {
   }
 };
 
-const writeWithFallback = async (fileName: string, content: string): Promise<string> => {
+const writeWithFallback = async (
+  fileName: string,
+  content: string,
+  encoding: 'utf8' | 'base64' = 'utf8',
+): Promise<string> => {
   await ensureLegacyWritePermission();
   const candidates = [RNFS.DownloadDirectoryPath, RNFS.ExternalDirectoryPath, RNFS.DocumentDirectoryPath].filter(
     Boolean,
@@ -25,7 +35,7 @@ const writeWithFallback = async (fileName: string, content: string): Promise<str
   for (const dir of candidates) {
     const path = `${dir}/${fileName}`;
     try {
-      await RNFS.writeFile(path, content, 'utf8');
+      await RNFS.writeFile(path, content, encoding);
       return path;
     } catch (e) {
       lastError = e;
@@ -44,9 +54,25 @@ export const exportTransactionsCsv = async (repos: Repositories, now = new Date(
   return { path, count: transactions.length };
 };
 
-/** Sauvegarde complète JSON (comptes, transactions, dettes, prévisionnel, tontines, objectifs, budget). */
-export const exportJsonBackup = async (repos: Repositories, month: string, now = new Date()): Promise<ExportResult> => {
-  const [accounts, transactions, debts, current, next, tontines, savingsGoals, budgetConfig] = await Promise.all([
+/** Instantané complet (comptes, transactions, dettes, prévisionnel, tontines, objectifs, budget, famille). */
+export const collectBackupJson = async (
+  repos: Repositories,
+  month: string,
+  now = new Date(),
+): Promise<{ json: string; transactions: Transaction[] }> => {
+  const [
+    accounts,
+    transactions,
+    debts,
+    current,
+    next,
+    tontines,
+    savingsGoals,
+    budgetConfig,
+    familyRequests,
+    solidarityBudget,
+    familyMembers,
+  ] = await Promise.all([
     repos.accounts.getAll(),
     repos.transactions.listAll(),
     repos.debts.getAll(),
@@ -55,6 +81,9 @@ export const exportJsonBackup = async (repos: Repositories, month: string, now =
     repos.tontines.getAll(),
     repos.savingsGoals.getAll(),
     repos.settings.getBudgetConfig(),
+    repos.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
+    repos.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
+    repos.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, []),
   ]);
   const json = buildJsonBackup({
     exportedAt: toLocalIso(now),
@@ -65,7 +94,24 @@ export const exportJsonBackup = async (repos: Repositories, month: string, now =
     tontines,
     savingsGoals,
     budgetConfig,
+    familyRequests,
+    solidarityBudget,
+    familyMembers,
   });
+  return { json, transactions };
+};
+
+/** Sauvegarde complète JSON. */
+export const exportJsonBackup = async (repos: Repositories, month: string, now = new Date()): Promise<ExportResult> => {
+  const { json, transactions } = await collectBackupJson(repos, month, now);
   const path = await writeWithFallback(`LigdiBe_sauvegarde_${fileTimestamp(now)}.json`, json);
+  return { path, count: transactions.length };
+};
+
+/** Archive ZIP (sauvegarde JSON + CSV + notice) : le format recommandé pour changer de téléphone. */
+export const exportZipBackup = async (repos: Repositories, month: string, now = new Date()): Promise<ExportResult> => {
+  const { json, transactions } = await collectBackupJson(repos, month, now);
+  const zip = buildBackupZip(json, transactionsToCsv(transactions));
+  const path = await writeWithFallback(`LigdiBe_sauvegarde_${fileTimestamp(now)}.zip`, bytesToBase64(zip), 'base64');
   return { path, count: transactions.length };
 };

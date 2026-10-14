@@ -161,7 +161,7 @@ describe('Ingestion SMS (Headless) et import historique', () => {
     });
     const repos = createInMemoryRepositories();
     const report = await ingestion!.importSmsBacklog(repos, 0);
-    expect(report).toEqual({ recorded: 1, duplicates: 1, ignored: 1 });
+    expect(report).toEqual({ recorded: 1, duplicates: 1, ignored: 1, unrecognized: 0 });
 
     const live = await ingestion!.processRealtimeSms(repos, {
       sender: 'OrangeMoney',
@@ -170,6 +170,16 @@ describe('Ingestion SMS (Headless) et import historique', () => {
     });
     expect(live.status).toBe('RECORDED');
     expect(notifee.displayNotification).toHaveBeenCalled();
+
+    const unknown = await ingestion!.processRealtimeSms(repos, {
+      sender: 'Ecobank',
+      body: 'Nouvelle operation : achat de 4 500 FCFA effectue chez SUPERMARCHE',
+      timestamp: NOW.getTime(),
+    });
+    expect(unknown.status).toBe('UNRECOGNIZED');
+    expect(notifee.displayNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'ligdibe-unrecognized-sms', title: '🔎 SMS Ecobank à vérifier' }),
+    );
   });
 });
 

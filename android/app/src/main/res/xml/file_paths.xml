@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dossiers où LigdiBe écrit ses sauvegardes, partageables via FileProvider. -->
+<paths>
+    <external-path name="downloads" path="Download/" />
+    <external-files-path name="app_external" path="." />
+    <files-path name="app_files" path="." />
+</paths>
