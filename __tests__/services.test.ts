@@ -170,6 +170,16 @@ describe('Ingestion SMS (Headless) et import historique', () => {
     });
     expect(live.status).toBe('RECORDED');
     expect(notifee.displayNotification).toHaveBeenCalled();
+
+    const unknown = await ingestion!.processRealtimeSms(repos, {
+      sender: 'Ecobank',
+      body: 'Nouvelle operation : achat de 4 500 FCFA effectue chez SUPERMARCHE',
+      timestamp: NOW.getTime(),
+    });
+    expect(unknown.status).toBe('UNRECOGNIZED');
+    expect(notifee.displayNotification).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 'ligdibe-unrecognized-sms', title: '🔎 SMS Ecobank à vérifier' }),
+    );
   });
 });
 

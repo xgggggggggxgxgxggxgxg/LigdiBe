@@ -20,6 +20,7 @@ import { envelopeThresholdCrossed } from '../../domain/usecases/CategoryBudgets'
 import { compareMonths, totalFees } from '../../domain/usecases/Statistics';
 import { applyRepayment, debtRemaining, findDebtForTransaction } from '../../domain/usecases/ManageDebts';
 import { LEARNED_CATEGORIES_KEY } from '../../domain/usecases/ProcessIncomingSms';
+import type { UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
 
 export const CHANNELS = {
   TRANSACTIONS: 'ligdibe-transactions',
@@ -63,6 +64,18 @@ export const notifyExpenseDetected = async (tx: Transaction): Promise<void> => {
       pressAction: { id: 'default' },
       actions: QUICK_EXPENSE_CATEGORIES.map(c => ({ title: c, pressAction: { id: `${ACTION_CATEGORY}${c}` } })),
     },
+  });
+};
+
+/** SMS opérateur au format inconnu : invite à l'ajouter depuis l'accueil (une seule notification, mise à jour). */
+export const notifyUnrecognizedSms = async (sms: UnrecognizedSms): Promise<void> => {
+  await notifee.displayNotification({
+    id: 'ligdibe-unrecognized-sms',
+    title: `🔎 SMS ${sms.sender} à vérifier`,
+    body:
+      (sms.suggestedAmount !== undefined ? `${formatFCFA(sms.suggestedAmount)} : ` : '') +
+      'format inconnu. Ouvre LigdiBe pour l’ajouter en un tap.',
+    android: { channelId: CHANNELS.TRANSACTIONS, smallIcon: 'ic_notification', pressAction: { id: 'default' } },
   });
 };
 

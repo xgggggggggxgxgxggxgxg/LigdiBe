@@ -1,6 +1,6 @@
 import type { Repositories } from '../../domain/repositories';
 import { ProcessIncomingSmsUseCase, type ProcessSmsResult } from '../../domain/usecases/ProcessIncomingSms';
-import { notifyAfterRecording } from '../notifications/NotificationService';
+import { notifyAfterRecording, notifyUnrecognizedSms } from '../notifications/NotificationService';
 import { drainPendingSms, readSmsInbox, type NativeSms } from './SmsBridge';
 
 export interface IngestionReport {
@@ -35,6 +35,8 @@ export const processRealtimeSms = async (repos: Repositories, sms: NativeSms): P
   });
   if (result.status === 'RECORDED') {
     await notifyAfterRecording(repos, result.entries.transactions);
+  } else if (result.status === 'UNRECOGNIZED') {
+    await notifyUnrecognizedSms(result.pending);
   }
   return result;
 };
