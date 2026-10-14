@@ -21,10 +21,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - run: npx tsc --noEmit
-      - run: npx eslint . --ext .ts,.tsx,.js
-      # node:sqlite (tests des dépôts SQL) nécessite Node ≥ 22.5
-      - run: npx jest --coverage --maxWorkers=2
+      # typecheck + lint + tests (node:sqlite des tests SQL : Node ≥ 22.5)
+      - run: npm run verify
 
   android:
     runs-on: ubuntu-latest

@@ -3,15 +3,11 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { Field } from '../components/Field';
-import { getRepositories } from '../../data/repositories';
 import { ensureNotificationChannels } from '../../services/notifications/NotificationService';
 import { requestSmsPermissions } from '../../services/sms/SmsBridge';
-import { importSmsBacklog } from '../../services/sms/smsIngestion';
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
-
-const DAY_MS = 24 * 3600 * 1000;
 
 export const OnboardingScreen = () => {
   const config = useFinanceStore(s => s.budgetConfig);
@@ -29,9 +25,9 @@ export const OnboardingScreen = () => {
         monthlyBudget: parseInputAmount(budget) || config.monthlyBudget,
       });
       await ensureNotificationChannels().catch(() => undefined);
-      if (await requestSmsPermissions().catch(() => false)) {
-        await importSmsBacklog(await getRepositories(), Date.now() - 60 * DAY_MS);
-      }
+      // L'historique est importé via l'apprentissage guidé (bannière de l'accueil) :
+      // l'utilisateur confirme chaque SMS au lieu d'un import aveugle.
+      await requestSmsPermissions().catch(() => false);
       await hydrate();
     } finally {
       setBusy(false);

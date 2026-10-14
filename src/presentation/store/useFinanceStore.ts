@@ -32,6 +32,7 @@ import {
 } from '../../domain/usecases/FamilyMembers';
 import { WIDGET_SHOW_BALANCE_KEY } from '../../services/widget/WidgetService';
 import { MONTHLY_DATA_LIMIT_KEY } from '../../domain/usecases/DataTracker';
+import { LEARNING_DONE_KEY, LEARNING_SESSION_KEY } from '../../domain/usecases/LearningQueue';
 import {
   decideRequest,
   FAMILY_REQUESTS_KEY,
@@ -43,6 +44,7 @@ const PAID_FIXED_KEY = (month: string) => `paidFixed:${month}`;
 const ONBOARDED_KEY = 'onboarded';
 const USER_NAME_KEY = 'userName';
 const THEME_KEY = 'themeMode';
+export const CUSTOM_CATEGORIES_KEY = 'customCategories';
 
 export interface ManualTransactionInput {
   accountId: string;
@@ -86,6 +88,10 @@ export interface FinanceState {
   familyMembers: FamilyMember[];
   /** Plafond mensuel des forfaits internet en FCFA (0 = aucun). */
   monthlyDataLimit: number;
+  /** Catégories créées par l'utilisateur (en plus des catégories standard). */
+  customCategories: string[];
+  /** Apprentissage guidé : jamais fait, en pause (brouillon) ou terminé au moins une fois. */
+  learningStatus: 'NEVER' | 'PAUSED' | 'DONE';
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -145,6 +151,8 @@ export interface FinanceState {
   addFamilyMembers(members: ReadonlyArray<Omit<FamilyMember, 'id'> & Partial<FamilyMember>>): Promise<number>;
   removeFamilyMember(memberId: string): Promise<void>;
   setMonthlyDataLimit(amount: number): Promise<void>;
+  /** Crée une catégorie (sans doublon, insensible à la casse) ; retourne son nom final. */
+  addCustomCategory(name: string): Promise<string>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -155,6 +163,9 @@ let repositoriesProvider: () => Promise<Repositories> = async () => {
 export const configureFinanceStore = (provider: () => Promise<Repositories>) => {
   repositoriesProvider = provider;
 };
+
+/** Dépôts configurés (partagés avec les autres stores, ex. apprentissage guidé). */
+export const getConfiguredRepositories = (): Promise<Repositories> => repositoriesProvider();
 
 const loadWindowStart = (now: Date): string => {
   const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
@@ -199,6 +210,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     widgetShowBalance: false,
     familyMembers: [],
     monthlyDataLimit: 0,
+    customCategories: [],
+    learningStatus: 'NEVER',
 
     async hydrate(now = new Date()) {
       try {
@@ -224,6 +237,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           widgetShowBalance,
           familyMembers,
           monthlyDataLimit,
+          customCategories,
+          learningSession,
+          learningDoneAt,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -244,6 +260,9 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<boolean>(WIDGET_SHOW_BALANCE_KEY, false),
           r.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, []),
           r.settings.getJson<number>(MONTHLY_DATA_LIMIT_KEY, 0),
+          r.settings.getJson<string[]>(CUSTOM_CATEGORIES_KEY, []),
+          r.settings.getJson<{ items: unknown[] } | null>(LEARNING_SESSION_KEY, null),
+          r.settings.getJson<string | null>(LEARNING_DONE_KEY, null),
         ]);
         set({
           ready: true,
@@ -268,6 +287,8 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           widgetShowBalance,
           familyMembers,
           monthlyDataLimit,
+          customCategories,
+          learningStatus: learningSession?.items.length ? 'PAUSED' : learningDoneAt ? 'DONE' : 'NEVER',
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -672,6 +693,21 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const familyMembers = get().familyMembers.filter(m => m.id !== memberId);
       await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
       set({ familyMembers });
+    },
+
+    async addCustomCategory(name) {
+      const clean = name.replace(/\s+/g, ' ').trim();
+      const existing = [...Object.values(CATEGORIES), ...get().customCategories].find(
+        c => c.toLowerCase() === clean.toLowerCase(),
+      );
+      if (existing || !clean) {
+        return existing ?? clean;
+      }
+      const r = await repos();
+      const customCategories = [...get().customCategories, clean];
+      await r.settings.setJson(CUSTOM_CATEGORIES_KEY, customCategories);
+      set({ customCategories });
+      return clean;
     },
 
     async setMonthlyDataLimit(amount) {

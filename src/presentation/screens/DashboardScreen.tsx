@@ -50,7 +50,7 @@ export const filterTransactions = (txs: ReadonlyArray<Transaction>, f: QuickFilt
 
 /** Navigation minimale (l'écran est aussi rendu hors navigateur dans les tests). */
 export interface DataTrackerLink {
-  navigate: (screen: 'DataTracker' | 'Backup') => void;
+  navigate: (screen: 'DataTracker' | 'Backup' | 'Learning') => void;
 }
 
 export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }) => {
@@ -64,6 +64,7 @@ export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }
   const unrecognizedCount = useFinanceStore(s => s.unrecognizedSms.length);
   const [reviewing, setReviewing] = useState(false);
   const [searching, setSearching] = useState(false);
+  const learningStatus = useFinanceStore(s => s.learningStatus);
   const [filter, setFilter] = useState<QuickFilter>('ALL');
   const [hidden, setHidden] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -113,6 +114,21 @@ export const DashboardScreen = ({ navigation }: { navigation?: DataTrackerLink }
           <BalanceCard key={a.id} account={a} hidden={hidden} />
         ))}
       </ScrollView>
+      <Banner
+        visible={learningStatus !== 'DONE' && navigation !== undefined}
+        icon="school-outline"
+        actions={[
+          {
+            label: learningStatus === 'PAUSED' ? 'Reprendre' : 'Commencer',
+            onPress: () => navigation?.navigate('Learning'),
+            testID: 'open-learning',
+          },
+        ]}
+        style={styles.banner}>
+        {learningStatus === 'PAUSED'
+          ? 'Apprentissage guidé en pause : reprends là où tu t’étais arrêté.'
+          : 'Classe ton historique SMS en quelques taps : LigdiBe apprend tes habitudes.'}
+      </Banner>
       <Banner
         visible={unrecognizedCount > 0}
         icon="message-alert-outline"

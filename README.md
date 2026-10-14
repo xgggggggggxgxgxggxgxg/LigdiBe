@@ -7,6 +7,7 @@
 | Domaine | Ce que fait l'app |
 |---|---|
 | Lecture SMS | Analyse en temps réel (même app fermée) des SMS Orange Money, Moov Money, Wave/UBA, Telecel et des banques (débit/crédit, retrait GAB → Poche, salaire)… Whitelist d'expéditeurs, rejet des OTP / PIN / 2FA. |
+| Apprentissage guidé | Au premier lancement (et via Réglages / Sauvegarde › « Réanalyser mes SMS ») : l'historique SMS est classé un SMS à la fois avec une proposition pré-remplie — Confirmer / Corriger (type, montant, compte, catégorie, **nouvelle catégorie**) / Ignorer (motif). Ordre : haute confiance d'abord, puis ambigus, puis non reconnus. Chaque correction affine les suivantes (« deviné d'après tes 2 choix précédents »). Reprise exacte, annulation, validation finale en une transaction ; OTP et doublons exclus d'office. |
 | SMS non reconnus | Un SMS opérateur au format inconnu n'est pas perdu : il est mis de côté (montant et compte pré-remplis) et s'ajoute en un tap depuis l'accueil. |
 | Retrait kiosque | MoMo débité (montant + frais), **Poche (espèces) créditée du net** : un retrait n'est pas une dépense. Frais → « Frais & Taxes ». |
 | Crédit & data | Compteur jour / mois / an des micro-recharges, alerte plafond. |
@@ -48,8 +49,7 @@ __tests__/           Jest (parseur : 100 % de couverture)
 
 ```bash
 npm install --legacy-peer-deps
-npm test            # 170+ tests
-npx tsc --noEmit
+npm run verify      # typecheck + lint + 240+ tests
 npm run android     # appareil Android ou émulateur
 ```
 

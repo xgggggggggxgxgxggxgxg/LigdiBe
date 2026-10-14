@@ -126,7 +126,7 @@ const ResolveForm = ({ sms, onDone }: { sms: UnrecognizedSms; onDone: () => void
       {type === 'EXPENSE' && (
         <>
           <Text variant="labelLarge">Catégorie</Text>
-          <CategoryPicker value={category} onChange={setCategory} />
+          <CategoryPicker value={category} onChange={setCategory} allowCreate />
         </>
       )}
       <View style={styles.row}>

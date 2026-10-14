@@ -45,7 +45,7 @@ export const TransactionDetailModal = ({ transaction: t, onDismiss }: Props) => 
         {tx.type === 'EXPENSE' && (
           <>
             <Text variant="labelLarge">Catégorie (LigdiBe s'en souviendra)</Text>
-            <CategoryPicker value={tx.category} onChange={c => recategorize(tx.id, c)} />
+            <CategoryPicker value={tx.category} onChange={c => recategorize(tx.id, c)} allowCreate />
           </>
         )}
         {tx.rawSms && (

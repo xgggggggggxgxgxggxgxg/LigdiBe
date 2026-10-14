@@ -68,7 +68,11 @@ const Step = ({ n, icon, label }: { n: number; icon: string; label: string }) =>
   );
 };
 
-export const BackupScreen = ({ navigation }: { navigation?: { goBack: () => void } }) => {
+export const BackupScreen = ({
+  navigation,
+}: {
+  navigation?: { goBack: () => void; navigate?: (screen: 'Learning') => void };
+}) => {
   const theme = useTheme();
   const now = useFinanceStore(s => s.now);
   const hydrate = useFinanceStore(s => s.hydrate);
@@ -291,6 +295,22 @@ export const BackupScreen = ({ navigation }: { navigation?: { goBack: () => void
               onPress={pick}
               testID="pick-backup">
               Choisir un fichier…
+            </Button>
+          </Card.Actions>
+        </Card>
+        <Card style={styles.card}>
+          <Card.Title
+            title="Réanalyser mes SMS"
+            subtitle="Apprentissage guidé : importe l'historique en classant chaque SMS"
+            left={props => <Avatar.Icon {...props} icon="school-outline" />}
+          />
+          <Card.Actions>
+            <Button
+              icon="message-text-clock-outline"
+              disabled={!navigation?.navigate}
+              onPress={() => navigation?.navigate?.('Learning')}
+              testID="backup-open-learning">
+              Lancer
             </Button>
           </Card.Actions>
         </Card>

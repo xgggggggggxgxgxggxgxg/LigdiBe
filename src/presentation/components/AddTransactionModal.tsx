@@ -79,7 +79,7 @@ export const AddTransactionModal = ({ visible, onDismiss }: Props) => {
         {type === 'EXPENSE' && (
           <>
             <Text variant="labelLarge">Catégorie</Text>
-            <CategoryPicker value={category} onChange={setCategory} />
+            <CategoryPicker value={category} onChange={setCategory} allowCreate />
           </>
         )}
         <Button

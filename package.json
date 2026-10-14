@@ -7,7 +7,10 @@
     "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "tsc --noEmit",
+    "test:ci": "jest --coverage --maxWorkers=2",
+    "verify": "npm run typecheck && npm run lint && npm run test:ci"
   },
   "dependencies": {
     "@notifee/react-native": "^7.8.2",

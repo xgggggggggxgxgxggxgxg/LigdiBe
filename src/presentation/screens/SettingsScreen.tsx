@@ -397,6 +397,14 @@ export const SettingsScreen = ({ navigation }: { navigation?: DataTrackerLink })
             subtitle="Exporter en ZIP, envoyer, importer sur un nouveau téléphone"
           />
           <List.Item
+            title="Réanalyser mes SMS"
+            description="Apprentissage guidé : classe l'historique un SMS à la fois"
+            left={props => <List.Icon {...props} icon="school-outline" />}
+            right={props => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => navigation?.navigate('Learning')}
+            testID="open-learning-settings"
+          />
+          <List.Item
             title="Ouvrir"
             description="Export ZIP / CSV / JSON et restauration"
             left={props => <List.Icon {...props} icon="folder-zip-outline" />}
