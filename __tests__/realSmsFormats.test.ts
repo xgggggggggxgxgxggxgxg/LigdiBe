@@ -444,6 +444,11 @@ describe('Étape 4 — Ecobank (formats réels)', () => {
       eco('XOF 1,000.00 Crédit au ac XX491001 REF:N18bbbb262800001 Votre solde disponible est XOF 2,000.00.')
         ?.counterpartyName,
     ).toBeUndefined();
+    expect(
+      eco(
+        'XOF 2,000.00 Crédit au ac XX491001 REF:A262800000000001 NAR: DEPOT SUR COMPTE. Votre solde disponible est XOF 3,000.00.',
+      ),
+    ).toMatchObject({ type: 'AGENT_DEPOSIT', counterpartyName: 'Dépôt sur compte' });
   });
 
   test('promos et notifications Ecobank : ignorées', () => {
