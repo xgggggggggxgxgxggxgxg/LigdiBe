@@ -304,6 +304,62 @@ const RULES: ReadonlyArray<ParserRule> = [
     },
   },
 
+  {
+    // Gabarit Moov « Clé: valeur » pour un transfert vers un autre abonné.
+    id: 'MOOV_TRANSFER_SENT',
+    provider: 'MOOV',
+    pattern: /Transfert r[ée]ussi (?:vers|au|à|a) (?:le )?(\+?\d{8,})? *([^\n]*)\n/i,
+    build: (m, s) => {
+      const name = cleanName(m[2]);
+      return {
+        type: 'EXPENSE',
+        amount: parseAmountOrZero(field(s, new RegExp(`Montant\\s*:\\s*${AMT}${CUR}`, 'i'))),
+        fee: moovFee(s),
+        total: moovTotal(s),
+        counterpartyPhone: m[1],
+        counterpartyName: name.length > 0 ? name : undefined,
+        merchantOrRecipient: name.length > 0 ? name : m[1],
+        balanceAfter: moovBalance(s),
+        reference: moovRef(s),
+        occurredAt: moovDate(s),
+      };
+    },
+  },
+
+  // ===================== BANQUES (Ecobank, Coris, SGBF, BOA…) =====================
+  {
+    // « Votre compte 0123XXXX a été débité de 25 000 XOF … Libellé: RETRAIT GAB » ou « Débit de … sur votre compte ».
+    id: 'BANK_ACCOUNT_MOVEMENT',
+    pattern: new RegExp(
+      `(?:(?:compte|carte)[^\\n]{0,40}?(d[ée]bit[ée]|cr[ée]dit[ée])\\s+(?:de\\s+|d'un montant de\\s+)?${AMT}${CUR}` +
+        `|(D[ée]bit|Cr[ée]dit)\\s+de\\s+${AMT}${CUR}\\s+sur (?:votre )?(?:compte|carte))`,
+      'i',
+    ),
+    build: (m, s) => {
+      const isCredit = /^cr/i.test(m[1] ?? m[3]);
+      const label = cleanName(field(s, /(?:Libell[ée]|Motif|Op[ée]ration|Objet|Description)\s*:\s*([^\n.]+)/i) ?? '');
+      const atm = /\b(?:GAB|DAB|ATM|RETRAIT)\b/i.test(label) || /\bretrait\b/i.test(s);
+      return {
+        type: isCredit ? 'INCOME' : atm ? 'CASH_WITHDRAWAL' : 'EXPENSE',
+        amount: parseAmountOrZero(m[2] ?? m[4]),
+        fee: parseAmountOrZero(field(s, new RegExp(`(?:Frais|Commission)\\s*:\\s*${OPT_AMT}${CUR}`, 'i'))),
+        counterpartyName: label.length > 0 ? label : undefined,
+        merchantOrRecipient: label.length > 0 ? label : undefined,
+        balanceAfter: parseAmount(
+          field(
+            s,
+            new RegExp(
+              `(?:Nouveau solde|Solde(?: disponible| dispo(?:nible)?| comptable)?)\\s*:?\\s*${AMT}${CUR}`,
+              'i',
+            ),
+          ),
+        ),
+        reference: field(s, /R[ée]f(?:[ée]rence)?\s*:\s*([A-Z0-9][A-Z0-9-]+)/i),
+        occurredAt: parseFrenchDate(s),
+      };
+    },
+  },
+
   // ===================== RÈGLES GÉNÉRIQUES (tous opérateurs) =====================
   {
     id: 'GENERIC_TRANSFER_SENT',

@@ -6,7 +6,7 @@
 
 | Domaine | Ce que fait l'app |
 |---|---|
-| Lecture SMS | Analyse en temps réel (même app fermée) des SMS Orange Money, Moov Money, Wave/UBA, Ecobank, Telecel… Whitelist d'expéditeurs, rejet des OTP / PIN / 2FA. |
+| Lecture SMS | Analyse en temps réel (même app fermée) des SMS Orange Money, Moov Money, Wave/UBA, Telecel et des banques (débit/crédit, retrait GAB → Poche, salaire)… Whitelist d'expéditeurs, rejet des OTP / PIN / 2FA. |
 | SMS non reconnus | Un SMS opérateur au format inconnu n'est pas perdu : il est mis de côté (montant et compte pré-remplis) et s'ajoute en un tap depuis l'accueil. |
 | Retrait kiosque | MoMo débité (montant + frais), **Poche (espèces) créditée du net** : un retrait n'est pas une dépense. Frais → « Frais & Taxes ». |
 | Crédit & data | Compteur jour / mois / an des micro-recharges, alerte plafond. |

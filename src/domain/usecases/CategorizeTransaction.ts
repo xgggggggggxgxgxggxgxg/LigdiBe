@@ -51,7 +51,9 @@ export const autoCategorize = (
     case 'AGENT_DEPOSIT':
       return CATEGORIES.MOMO_DEPOSIT;
     case 'INCOME':
-      return CATEGORIES.INCOME;
+      return /\bSALAIRE|\bPAIE\b|\bSALARY/i.test(`${parsed.merchantOrRecipient ?? ''} ${parsed.counterpartyName ?? ''}`)
+        ? CATEGORIES.SALARY
+        : CATEGORIES.INCOME;
   }
   const key = counterpartyKey(parsed);
   if (key && learned[key]) {
