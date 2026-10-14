@@ -94,6 +94,8 @@ export interface FinanceState {
   setUserName(userName: string): Promise<void>;
   /** Transactions d'un mois quelconque (depuis la mémoire si disponible, sinon la base). */
   getMonthTransactions(month: string): Promise<Transaction[]>;
+  /** Tout l'historique (recherche), y compris au-delà de la fenêtre chargée en mémoire. */
+  loadAllTransactions(): Promise<Transaction[]>;
   setExtraSenders(senders: string[]): Promise<void>;
   setThemeMode(mode: ThemeMode): Promise<void>;
   /** Transforme un SMS non reconnu en opération manuelle puis le retire de la file. */
@@ -477,6 +479,11 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       }
       const r = await repos();
       return r.transactions.listBetween(`${month}-01`, `${nextMonthKey(month)}-01`);
+    },
+
+    async loadAllTransactions() {
+      const r = await repos();
+      return r.transactions.listAll();
     },
 
     async setUserName(userName) {

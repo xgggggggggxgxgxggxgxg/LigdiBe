@@ -18,6 +18,7 @@
 | Enveloppes | Plafonds mensuels par catégorie, alerte à 80 % et 100 %. |
 | Récurrences | Détection automatique des opérations mensuelles (abonnements, loyer, salaire) proposées au prévisionnel. |
 | Épargne | Objectifs (Tabaski, rentrée, moto…) avec effort quotidien/hebdomadaire et suivi du rythme. |
+| Recherche | Dans tout l'historique (nom, numéro, montant, catégorie, sans accents) avec total envoyé / reçu : « combien j'ai donné à Moussa ? ». |
 | Gamification | Série de jours sous budget 🔥, 8 badges, défi de la semaine. |
 | Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté, **restauration** de sauvegarde (changement de téléphone). |
 | Sécurité | Verrouillage par code PIN (haché, salé, blocage après 5 essais), soldes masquables. |

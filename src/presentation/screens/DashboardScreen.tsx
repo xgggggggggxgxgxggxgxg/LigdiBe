@@ -8,6 +8,7 @@ import { AddTransactionModal } from '../components/AddTransactionModal';
 import { BalanceCard } from '../components/BalanceCard';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { DailyBudgetCard } from '../components/DailyBudgetCard';
+import { SearchModal } from '../components/SearchModal';
 import { StatTile } from '../components/StatTile';
 import { TransactionDetailModal } from '../components/TransactionDetailModal';
 import { TransactionItem } from '../components/TransactionItem';
@@ -57,6 +58,7 @@ export const DashboardScreen = () => {
   const hydrate = useFinanceStore(s => s.hydrate);
   const unrecognizedCount = useFinanceStore(s => s.unrecognizedSms.length);
   const [reviewing, setReviewing] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [filter, setFilter] = useState<QuickFilter>('ALL');
   const [hidden, setHidden] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -78,12 +80,21 @@ export const DashboardScreen = () => {
           <Text variant="titleMedium" style={styles.heroText}>
             {userName ? `Bonjour ${userName} 👋🏾` : 'Bonjour 👋🏾'}
           </Text>
-          <IconButton
-            icon={hidden ? 'eye-off' : 'eye'}
-            iconColor="#fff"
-            onPress={() => setHidden(h => !h)}
-            testID="toggle-hide"
-          />
+          <View style={styles.heroActions}>
+            <IconButton
+              icon="magnify"
+              iconColor="#fff"
+              onPress={() => setSearching(true)}
+              accessibilityLabel="Rechercher une opération"
+              testID="open-search"
+            />
+            <IconButton
+              icon={hidden ? 'eye-off' : 'eye'}
+              iconColor="#fff"
+              onPress={() => setHidden(h => !h)}
+              testID="toggle-hide"
+            />
+          </View>
         </View>
         <Text variant="labelLarge" style={styles.heroMuted}>
           Patrimoine total (MoMo + Banque + Poche)
@@ -170,6 +181,14 @@ export const DashboardScreen = () => {
       />
       <FAB icon="plus" label="Dépense cash" style={styles.fab} onPress={() => setAdding(true)} testID="fab-add" />
       <AddTransactionModal visible={adding} onDismiss={() => setAdding(false)} />
+      <SearchModal
+        visible={searching}
+        onDismiss={() => setSearching(false)}
+        onSelect={t => {
+          setSearching(false);
+          setSelected(t);
+        }}
+      />
       <UnrecognizedSmsModal visible={reviewing} onDismiss={() => setReviewing(false)} />
       <TransactionDetailModal transaction={selected} onDismiss={() => setSelected(undefined)} />
     </Screen>
@@ -185,6 +204,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 28,
   },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroActions: { flexDirection: 'row' },
   heroText: { color: '#fff' },
   heroMuted: { color: '#fff', opacity: 0.8 },
   total: { color: '#fff', fontWeight: '800' },
