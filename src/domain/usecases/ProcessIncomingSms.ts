@@ -7,7 +7,9 @@ import { isSensitiveSecuritySms, isWhitelistedSender } from '../../data/parser/s
 import { accountIdForProvider, CASH_ACCOUNT_ID, DEFAULT_ACCOUNTS, type Account } from '../models/Account';
 import type { Provider, Transaction } from '../models/Transaction';
 import type { AccountRepository, SettingsRepository, TransactionRepository } from '../repositories';
+import type { FamilyMember } from '../models/FamilyMember';
 import { autoCategorize } from './CategorizeTransaction';
+import { FAMILY_MEMBERS_KEY, familyPhoneTails } from './FamilyMembers';
 import {
   enqueueUnrecognized,
   looksLikeFinancialSms,
@@ -61,7 +63,11 @@ export const buildLedgerEntries = (
   parsed: ParsedSms,
   accounts: ReadonlyArray<Account>,
   receivedAt: Date,
-  options: { learnedCategories?: Readonly<Record<string, string>>; idGen?: (p: string) => string } = {},
+  options: {
+    learnedCategories?: Readonly<Record<string, string>>;
+    familyTails?: ReadonlySet<string>;
+    idGen?: (p: string) => string;
+  } = {},
 ): LedgerEntries => {
   const idGen = options.idGen ?? generateId;
   const nowIso = toLocalIso(receivedAt);
@@ -79,7 +85,7 @@ export const buildLedgerEntries = (
     tax: parsed.tax,
     counterpartyName: parsed.counterpartyName ?? parsed.merchantOrRecipient,
     counterpartyPhone: parsed.counterpartyPhone,
-    category: autoCategorize(parsed, options.learnedCategories),
+    category: autoCategorize(parsed, options.learnedCategories, options.familyTails),
     balanceAfter: parsed.balanceAfter,
     reference: parsed.reference,
     rawSms: parsed.rawSms,
@@ -218,6 +224,7 @@ export class ProcessIncomingSmsUseCase {
     const accounts = await this.repos.accounts.getAll();
     const entries = buildLedgerEntries(parsed, accounts, sms.receivedAt ?? new Date(), {
       learnedCategories: learned,
+      familyTails: familyPhoneTails(await this.repos.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, [])),
     });
     const write = async () => {
       await this.repos.transactions.insertMany(entries.transactions);

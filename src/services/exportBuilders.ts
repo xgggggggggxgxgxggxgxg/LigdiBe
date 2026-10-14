@@ -1,3 +1,4 @@
+import type { FamilyMember } from '../domain/models/FamilyMember';
 import type { FamilyRequest } from '../domain/models/FamilyRequest';
 import type { Account } from '../domain/models/Account';
 import type { Debt } from '../domain/models/Debt';
@@ -57,6 +58,7 @@ export interface BackupSnapshot {
   savingsGoals?: SavingsGoal[];
   budgetConfig?: BudgetConfig;
   familyRequests?: FamilyRequest[];
+  familyMembers?: FamilyMember[];
   solidarityBudget?: number;
 }
 

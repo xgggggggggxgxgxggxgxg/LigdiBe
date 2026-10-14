@@ -5,6 +5,7 @@ import {
   Button,
   Chip,
   IconButton,
+  Snackbar,
   ProgressBar,
   SegmentedButtons,
   Surface,
@@ -28,6 +29,7 @@ import { useFinanceStore } from '../store/useFinanceStore';
 import { palette } from '../theme/theme';
 import { AmountInput, parseInputAmount } from './AmountInput';
 import { Field } from './Field';
+import { avatarColor, FamilyMembersModal, initials } from './FamilyMembersModal';
 import { AppModal } from './Screen';
 
 const STATUS: Record<FamilyRequestStatus, { label: string; color: string; icon: string }> = {
@@ -39,14 +41,6 @@ const STATUS: Record<FamilyRequestStatus, { label: string; color: string; icon: 
 };
 
 const REASONS = ['Santé', 'Scolarité', 'Funérailles', 'Baptême', 'Mariage', 'Nourriture', 'Transport', 'Loyer'];
-
-const initials = (name: string) =>
-  name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map(w => w[0]?.toUpperCase() ?? '')
-    .join('');
 
 const levelColor = (s: SolidaritySummary) =>
   s.level === 'EXCEEDED' ? palette.red : s.level === 'WARNING' ? palette.orange : palette.green;
@@ -140,6 +134,57 @@ const SolidarityHeader = ({ summary }: { summary: SolidaritySummary }) => {
         <Chip icon="bell-ring-outline" compact style={styles.pendingChip} testID="solidarity-pending">
           {summary.pendingCount} demande{summary.pendingCount > 1 ? 's' : ''} · {formatFCFA(summary.pendingAmount)}
         </Chip>
+      )}
+    </Surface>
+  );
+};
+
+const FamilyStrip = ({ onManage, onImport }: { onManage: () => void; onImport: () => void }) => {
+  const members = useFinanceStore(s => s.familyMembers);
+  return (
+    <Surface style={styles.strip} elevation={1} testID="family-strip">
+      <View style={styles.rowBetween}>
+        <Text variant="titleSmall">👨🏾‍👩🏾‍👧🏾 Ma famille {members.length > 0 ? `(${members.length})` : ''}</Text>
+        {members.length > 0 && (
+          <Button compact onPress={onManage} testID="manage-family">
+            Gérer
+          </Button>
+        )}
+      </View>
+      {members.length === 0 ? (
+        <View style={styles.rowCenter}>
+          <Text variant="bodySmall" style={[styles.flex, styles.muted]}>
+            Importe tes proches : leurs envois MoMo seront classés « Famille » tout seuls.
+          </Text>
+          <Button mode="contained-tonal" icon="card-account-phone-outline" onPress={onImport} testID="import-family">
+            Importer
+          </Button>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.avatars}>
+          {members.slice(0, 12).map(m => (
+            <View key={m.id} style={styles.avatarItem}>
+              <Avatar.Text
+                size={42}
+                label={initials(m.name)}
+                color="#fff"
+                style={{ backgroundColor: avatarColor(m.name) }}
+              />
+              <Text variant="labelSmall" numberOfLines={1} style={styles.avatarName}>
+                {m.name.split(/\s+/)[0]}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.avatarItem}>
+            <IconButton
+              icon="plus"
+              mode="outlined"
+              size={20}
+              onPress={onImport}
+              accessibilityLabel="Ajouter des proches"
+            />
+          </View>
+        </ScrollView>
       )}
     </Surface>
   );
@@ -345,12 +390,37 @@ export const AddFamilyRequestModal = ({ visible, onDismiss }: { visible: boolean
   const [phone, setPhone] = useState('');
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const members = useFinanceStore(s => s.familyMembers);
   return (
     <AppModal visible={visible} onDismiss={onDismiss}>
       <ScrollView keyboardShouldPersistTaps="handled">
         <Text variant="titleLarge" style={styles.bold}>
           Nouvelle demande d'un proche
         </Text>
+        {members.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.memberChips}>
+            {members.map(m => (
+              <Chip
+                key={m.id}
+                avatar={
+                  <Avatar.Text
+                    size={24}
+                    label={initials(m.name)}
+                    color="#fff"
+                    style={{ backgroundColor: avatarColor(m.name) }}
+                  />
+                }
+                selected={name === m.name}
+                onPress={() => {
+                  setName(m.name);
+                  setPhone(m.phone ?? '');
+                }}
+                testID={`pick-member-${m.id}`}>
+                {m.name}
+              </Chip>
+            ))}
+          </ScrollView>
+        )}
         <Field
           mode="outlined"
           label="Qui demande ? (ex: Tonton Issa)"
@@ -406,6 +476,8 @@ export const FamilySection = () => {
   const transactions = useFinanceStore(s => s.transactions);
   const now = useFinanceStore(s => s.now);
   const [answering, setAnswering] = useState<FamilyRequest>();
+  const [membersModal, setMembersModal] = useState<'CLOSED' | 'MANAGE' | 'IMPORT'>('CLOSED');
+  const [toast, setToast] = useState('');
   const summary = useMemo(() => {
     const month = monthKey(now);
     return summarizeSolidarity(
@@ -421,7 +493,12 @@ export const FamilySection = () => {
       <FlatList
         data={sorted}
         keyExtractor={r => r.id}
-        ListHeaderComponent={<SolidarityHeader summary={summary} />}
+        ListHeaderComponent={
+          <>
+            <SolidarityHeader summary={summary} />
+            <FamilyStrip onManage={() => setMembersModal('MANAGE')} onImport={() => setMembersModal('IMPORT')} />
+          </>
+        }
         renderItem={({ item }) => <RequestCard request={item} onAnswer={setAnswering} />}
         ListEmptyComponent={
           <View style={styles.empty}>
@@ -435,12 +512,35 @@ export const FamilySection = () => {
         contentContainerStyle={styles.list}
       />
       <ReplyModal request={answering} summary={summary} onDismiss={() => setAnswering(undefined)} />
+      <FamilyMembersModal
+        visible={membersModal !== 'CLOSED'}
+        startWithContacts={membersModal === 'IMPORT'}
+        onDismiss={() => setMembersModal('CLOSED')}
+        onAdded={(added, reclassified) =>
+          setToast(
+            `${added} proche${added > 1 ? 's' : ''} ajouté${added > 1 ? 's' : ''}` +
+              (reclassified > 0
+                ? ` · ${reclassified} envoi${reclassified > 1 ? 's' : ''} reclassé${
+                    reclassified > 1 ? 's' : ''
+                  } en Famille`
+                : ''),
+          )
+        }
+      />
+      <Snackbar visible={toast !== ''} onDismiss={() => setToast('')} duration={3500} testID="family-toast">
+        {toast}
+      </Snackbar>
     </>
   );
 };
 
 const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 96 },
+  strip: { padding: 12, borderRadius: 18, marginBottom: 14 },
+  avatars: { gap: 12, paddingTop: 8 },
+  avatarItem: { alignItems: 'center', width: 56 },
+  avatarName: { marginTop: 4, opacity: 0.8 },
+  memberChips: { gap: 6, paddingVertical: 8 },
   header: { padding: 16, borderRadius: 20, marginBottom: 14 },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 10 },

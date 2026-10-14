@@ -22,7 +22,14 @@ import {
   type ProcessSmsResult,
 } from '../../domain/usecases/ProcessIncomingSms';
 import { UNRECOGNIZED_SMS_KEY, type UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
+import type { FamilyMember } from '../../domain/models/FamilyMember';
 import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import {
+  FAMILY_MEMBERS_KEY,
+  familyPhoneTails,
+  isFamilyPhone,
+  mergeFamilyMembers,
+} from '../../domain/usecases/FamilyMembers';
 import { WIDGET_SHOW_BALANCE_KEY } from '../../services/widget/WidgetService';
 import {
   decideRequest,
@@ -74,6 +81,8 @@ export interface FinanceState {
   solidarityBudget: number;
   /** Afficher le patrimoine total sur le widget d'écran d'accueil (masqué par défaut). */
   widgetShowBalance: boolean;
+  /** « Ma famille » : proches dont les envois sont classés automatiquement. */
+  familyMembers: FamilyMember[];
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -126,6 +135,12 @@ export interface FinanceState {
   deleteFamilyRequest(requestId: string): Promise<void>;
   setSolidarityBudget(amount: number): Promise<void>;
   setWidgetShowBalance(show: boolean): Promise<void>;
+  /**
+   * Ajoute des proches (sans doublon) et reclasse en « Famille » leurs envois déjà
+   * enregistrés comme simples transferts. Retourne le nombre d'opérations reclassées.
+   */
+  addFamilyMembers(members: ReadonlyArray<Omit<FamilyMember, 'id'> & Partial<FamilyMember>>): Promise<number>;
+  removeFamilyMember(memberId: string): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -178,6 +193,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     familyRequests: [],
     solidarityBudget: 0,
     widgetShowBalance: false,
+    familyMembers: [],
 
     async hydrate(now = new Date()) {
       try {
@@ -201,6 +217,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           familyRequests,
           solidarityBudget,
           widgetShowBalance,
+          familyMembers,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -219,6 +236,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
           r.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
           r.settings.getJson<boolean>(WIDGET_SHOW_BALANCE_KEY, false),
+          r.settings.getJson<FamilyMember[]>(FAMILY_MEMBERS_KEY, []),
         ]);
         set({
           ready: true,
@@ -241,6 +259,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           familyRequests,
           solidarityBudget,
           widgetShowBalance,
+          familyMembers,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -615,6 +634,36 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.settings.setJson(SOLIDARITY_BUDGET_KEY, amount);
       set({ solidarityBudget: amount });
+    },
+
+    async addFamilyMembers(input) {
+      const r = await repos();
+      const added = input.map(m => ({ ...m, id: m.id ?? generateId('member'), name: m.name.trim() }));
+      const familyMembers = mergeFamilyMembers(get().familyMembers, added);
+      await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
+      set({ familyMembers });
+      const tails = familyPhoneTails(added);
+      const toReclassify = get().transactions.filter(
+        t =>
+          t.type === 'EXPENSE' &&
+          (t.category === CATEGORIES.TRANSFER || t.category === CATEGORIES.OTHER) &&
+          isFamilyPhone(t.counterpartyPhone, tails),
+      );
+      for (const t of toReclassify) {
+        await r.transactions.update(t.id, { category: CATEGORIES.FAMILY });
+      }
+      const ids = new Set(toReclassify.map(t => t.id));
+      set(st => ({
+        transactions: st.transactions.map(t => (ids.has(t.id) ? { ...t, category: CATEGORIES.FAMILY } : t)),
+      }));
+      return toReclassify.length;
+    },
+
+    async removeFamilyMember(memberId) {
+      const r = await repos();
+      const familyMembers = get().familyMembers.filter(m => m.id !== memberId);
+      await r.settings.setJson(FAMILY_MEMBERS_KEY, familyMembers);
+      set({ familyMembers });
     },
 
     async setWidgetShowBalance(show) {

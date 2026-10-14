@@ -1,5 +1,6 @@
 import { CATEGORIES } from '../../core/categories';
 import type { ParsedSms } from '../../data/parser/SmsParserEngine';
+import { isFamilyPhone } from './FamilyMembers';
 
 /** Mots-clés marchands courants en Afrique de l'Ouest → catégorie. */
 const KEYWORD_RULES: ReadonlyArray<[RegExp, string]> = [
@@ -36,12 +37,14 @@ export const counterpartyKey = (p: {
  * Catégorisation automatique. Priorité :
  * 1. type d'opération (crédit, retrait, revenu),
  * 2. catégories apprises des corrections de l'utilisateur,
+ * 2 bis. numéro d'un proche enregistré dans « Ma famille »,
  * 3. mots-clés marchands,
  * 4. transfert vers une personne (numéro de téléphone), sinon « Autre ».
  */
 export const autoCategorize = (
   parsed: Pick<ParsedSms, 'type' | 'counterpartyName' | 'counterpartyPhone' | 'merchantOrRecipient'>,
   learned: Readonly<Record<string, string>> = {},
+  familyTails: ReadonlySet<string> = new Set(),
 ): string => {
   switch (parsed.type) {
     case 'AIRTIME_RECHARGE':
@@ -58,6 +61,9 @@ export const autoCategorize = (
   const key = counterpartyKey(parsed);
   if (key && learned[key]) {
     return learned[key];
+  }
+  if (isFamilyPhone(parsed.counterpartyPhone, familyTails)) {
+    return CATEGORIES.FAMILY;
   }
   const text = `${parsed.merchantOrRecipient ?? ''} ${parsed.counterpartyName ?? ''}`;
   const rule = KEYWORD_RULES.find(([re]) => re.test(text));
