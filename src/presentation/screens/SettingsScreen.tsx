@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { Button, Card, Chip, Divider, IconButton, List, SegmentedButtons, Text } from 'react-native-paper';
+import { Button, Card, Chip, Divider, IconButton, List, SegmentedButtons, Switch, Text } from 'react-native-paper';
 import { Screen } from '../components/Screen';
 import { Field } from '../components/Field';
 import { formatFCFA } from '../../core/currency';
@@ -52,6 +52,8 @@ export const SettingsScreen = () => {
   const [testResult, setTestResult] = useState<ParsedSms | null | undefined>();
   const themeMode = useFinanceStore(s => s.themeMode);
   const setThemeMode = useFinanceStore(s => s.setThemeMode);
+  const widgetShowBalance = useFinanceStore(s => s.widgetShowBalance);
+  const setWidgetShowBalance = useFinanceStore(s => s.setWidgetShowBalance);
   const pinEnabled = useLockStore(s => s.pinEnabled);
   const setPinEnabled = useLockStore(s => s.setPinEnabled);
   const [newPin, setNewPin] = useState('');
@@ -146,6 +148,21 @@ export const SettingsScreen = () => {
               ]}
             />
           </Card.Content>
+        </Card>
+
+        <Card style={styles.card}>
+          <Card.Title
+            title="Widget d'écran d'accueil"
+            subtitle="Appui long sur l'écran d'accueil › Widgets › LigdiBe"
+          />
+          <List.Item
+            title="Afficher mon patrimoine"
+            description="Masqué par défaut : seul le budget du jour est visible sur l'écran d'accueil."
+            left={props => <List.Icon {...props} icon="widgets-outline" />}
+            right={() => (
+              <Switch value={widgetShowBalance} onValueChange={setWidgetShowBalance} testID="widget-balance-switch" />
+            )}
+          />
         </Card>
 
         <Card style={styles.card}>

@@ -4,6 +4,7 @@ import { AppState, StatusBar, useColorScheme } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { getRepositories } from './src/data/repositories';
+import { useWidgetSync } from './src/presentation/hooks/useWidgetSync';
 import { RootNavigator } from './src/presentation/navigation/RootNavigator';
 import { useFinanceStore } from './src/presentation/store/useFinanceStore';
 import { useLockStore } from './src/presentation/store/useLockStore';
@@ -41,6 +42,7 @@ function App(): React.JSX.Element {
   const themeMode = useFinanceStore(s => s.themeMode);
   const systemScheme = useColorScheme();
   const theme = resolveTheme(themeMode, systemScheme);
+  useWidgetSync();
   useEffect(() => {
     useLockStore.getState().init();
     syncOnForeground();

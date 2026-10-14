@@ -23,6 +23,7 @@ import {
 } from '../../domain/usecases/ProcessIncomingSms';
 import { UNRECOGNIZED_SMS_KEY, type UnrecognizedSms } from '../../domain/usecases/UnrecognizedSms';
 import type { FamilyRequest } from '../../domain/models/FamilyRequest';
+import { WIDGET_SHOW_BALANCE_KEY } from '../../services/widget/WidgetService';
 import {
   decideRequest,
   FAMILY_REQUESTS_KEY,
@@ -71,6 +72,8 @@ export interface FinanceState {
   familyRequests: FamilyRequest[];
   /** Budget solidarité mensuel (0 = non défini). */
   solidarityBudget: number;
+  /** Afficher le patrimoine total sur le widget d'écran d'accueil (masqué par défaut). */
+  widgetShowBalance: boolean;
 
   hydrate(now?: Date): Promise<void>;
   ingestSms(sms: IncomingSms): Promise<ProcessSmsResult>;
@@ -122,6 +125,7 @@ export interface FinanceState {
   decideFamilyRequest(requestId: string, kind: ReplyKind, givenAmount?: number, accountId?: string): Promise<void>;
   deleteFamilyRequest(requestId: string): Promise<void>;
   setSolidarityBudget(amount: number): Promise<void>;
+  setWidgetShowBalance(show: boolean): Promise<void>;
 }
 
 let repositoriesProvider: () => Promise<Repositories> = async () => {
@@ -173,6 +177,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
     unrecognizedSms: [],
     familyRequests: [],
     solidarityBudget: 0,
+    widgetShowBalance: false,
 
     async hydrate(now = new Date()) {
       try {
@@ -195,6 +200,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           unrecognizedSms,
           familyRequests,
           solidarityBudget,
+          widgetShowBalance,
         ] = await Promise.all([
           r.accounts.getAll(),
           r.transactions.listBetween(loadWindowStart(now), '9999'),
@@ -212,6 +218,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           r.settings.getJson<UnrecognizedSms[]>(UNRECOGNIZED_SMS_KEY, []),
           r.settings.getJson<FamilyRequest[]>(FAMILY_REQUESTS_KEY, []),
           r.settings.getJson<number>(SOLIDARITY_BUDGET_KEY, 0),
+          r.settings.getJson<boolean>(WIDGET_SHOW_BALANCE_KEY, false),
         ]);
         set({
           ready: true,
@@ -233,6 +240,7 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
           unrecognizedSms,
           familyRequests,
           solidarityBudget,
+          widgetShowBalance,
         });
       } catch (e) {
         set({ ready: true, error: e instanceof Error ? e.message : String(e) });
@@ -607,6 +615,12 @@ export const useFinanceStore = create<FinanceState>((set, get) => {
       const r = await repos();
       await r.settings.setJson(SOLIDARITY_BUDGET_KEY, amount);
       set({ solidarityBudget: amount });
+    },
+
+    async setWidgetShowBalance(show) {
+      const r = await repos();
+      await r.settings.setJson(WIDGET_SHOW_BALANCE_KEY, show);
+      set({ widgetShowBalance: show });
     },
 
     async setExtraSenders(senders) {

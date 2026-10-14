@@ -25,12 +25,14 @@
 | Données | SQLite chiffré SQLCipher (AES-256, clé dans l'Android Keystore). Export CSV / JSON horodaté, **restauration** de sauvegarde (changement de téléphone). |
 | Sécurité | Verrouillage par code PIN (haché, salé, blocage après 5 essais), soldes masquables. |
 | Notifications | Post-dépense avec catégories en un tap, rappel 07h30, bilan 21h30, bilan mensuel le 1er, rappel prévisionnel le 28, alertes. |
+| Widget Android | Budget du jour sur l'écran d'accueil (reste, jauge, série 🔥, week-end), mis à jour à chaque SMS même app fermée ; patrimoine affiché seulement si activé. |
 | Confort | Mode sombre (auto/clair/sombre), libellés accessibles TalkBack. |
 
 ## Architecture
 
 ```
 android/app/src/main/java/com/ligdibe/sms/  SmsReceiver.kt, SmsHeadlessTaskService.kt, SmsInboxModule.kt
+android/app/src/main/java/com/ligdibe/widget/  BudgetWidgetProvider.kt, WidgetModule.kt
 src/core/            devise FCFA, dates, catégories, identifiants
 src/data/parser/     SmsParserEngine (regex opérateurs), filtres de sécurité
 src/data/database/   op-sqlite + SQLCipher, migrations

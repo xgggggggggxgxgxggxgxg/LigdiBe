@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">LigdiBe</string>
+    <string name="widget_description">Ton budget du jour en un coup d\'œil</string>
+    <string name="widget_title">LigdiBe · Budget du jour</string>
+    <string name="widget_empty">Ouvre LigdiBe pour afficher ton budget du jour</string>
+    <string name="widget_stale">Nouveau jour : ouvre LigdiBe pour actualiser</string>
 </resources>
