@@ -1,0 +1,6 @@
+Highlights
+- G29 singling-out, linkability and inference criteria measured on knowledge curves.
+- Uniqueness, exact linkage and raw accuracy are biased in imbalanced health data.
+- Raw accuracy of an uninformative attack falls below the trivial baseline.
+- Chance-corrected linkage index and MCC order perturbed releases consistently.
+- Open-source pipeline; only aggregate statistics are written (data minimisation).

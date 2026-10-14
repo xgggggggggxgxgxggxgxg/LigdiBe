@@ -1,0 +1,16 @@
+Données : /home/user/LigdiBe/M2MIAS_reidentification/M2MIAS/data_fictive — 14 fichiers publiés, 30 ordres
+  ok out_direct_100.txt (1500 lignes)
+  ok out_direct_00.txt (1500 lignes)
+  ok out_direct_10.txt (1500 lignes)
+  ok out_direct_25.txt (1500 lignes)
+  ok out_direct_50.txt (1500 lignes)
+  ok out_direct_90.txt (1500 lignes)
+  ok out_direct_75.txt (1500 lignes)
+  ok out_sample_00.txt (1500 lignes)
+  ok out_sample_10.txt (1500 lignes)
+  ok out_sample_100.txt (1500 lignes)
+  ok out_sample_25.txt (1500 lignes)
+  ok out_sample_50.txt (1500 lignes)
+  ok out_sample_75.txt (1500 lignes)
+  ok out_sample_90.txt (1500 lignes)
+Résultats écrits dans /home/user/LigdiBe/M2MIAS_reidentification/M2MIAS/results

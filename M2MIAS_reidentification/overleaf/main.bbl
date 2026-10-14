@@ -1,0 +1,288 @@
+\begin{thebibliography}{33}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\href}[2]{#2}
+\providecommand{\path}[1]{#1}
+\providecommand{\DOIprefix}{doi:}
+\providecommand{\ArXivprefix}{arXiv:}
+\providecommand{\URLprefix}{URL: }
+\providecommand{\Pubmedprefix}{pmid:}
+\providecommand{\doi}[1]{\href{http://dx.doi.org/#1}{\path{#1}}}
+\providecommand{\Pubmed}[1]{\href{pmid:#1}{\path{#1}}}
+\providecommand{\bibinfo}[2]{#2}
+\ifx\xfnm\relax \def\xfnm[#1]{\unskip,\space#1}\fi
+%Type = Misc
+\bibitem[{{European Parliament and Council of the European
+  Union}(2016)}]{gdpr2016}
+\bibinfo{author}{{European Parliament and Council of the European Union}},
+  \bibinfo{title}{Regulation ({EU}) 2016/679 (general data protection
+  regulation)}, \bibinfo{howpublished}{Official Journal of the European Union,
+  L 119, 4 May 2016}, \bibinfo{year}{2016}.
+%Type = Techreport
+\bibitem[{{Article 29 Data Protection Working Party}(2014)}]{wp29_2014}
+\bibinfo{author}{{Article 29 Data Protection Working Party}},
+  \bibinfo{title}{Opinion 05/2014 on Anonymisation Techniques ({WP216})},
+  \bibinfo{type}{Technical Report}, European Commission, \bibinfo{year}{2014}.
+  \bibinfo{note}{Adopted on 10 April 2014}.
+%Type = Misc
+\bibitem[{{Commission Nationale de l'Informatique et des Libert\'es
+  (CNIL)}(2014)}]{cnil_g29}
+\bibinfo{author}{{Commission Nationale de l'Informatique et des Libert\'es
+  (CNIL)}}, \bibinfo{title}{Le {G29} publie un avis sur les techniques
+  d'anonymisation},
+  \bibinfo{howpublished}{\url{https://www.cnil.fr/fr/le-g29-publie-un-avis-sur-les-techniques-danonymisation}},
+  \bibinfo{year}{2014}. \bibinfo{note}{Accessed 2026}.
+%Type = Misc
+\bibitem[{Steier et~al.(2025)Steier, Ramaswamy, Manoel, and
+  Haushalter}]{steier2025metrics}
+\bibinfo{author}{A.~Steier}, \bibinfo{author}{L.~Ramaswamy},
+  \bibinfo{author}{A.~Manoel}, \bibinfo{author}{A.~Haushalter},
+  \bibinfo{title}{Synthetic data privacy metrics}, \bibinfo{year}{2025}.
+  \href{http://arxiv.org/abs/2501.03941}{{\tt arXiv:2501.03941}}.
+%Type = Misc
+\bibitem[{Hu et~al.(2026)Hu, Li, Bahamyirou, and Chen}]{hu2026synqp}
+\bibinfo{author}{B.~Hu}, \bibinfo{author}{Y.~Li},
+  \bibinfo{author}{A.~Bahamyirou}, \bibinfo{author}{H.~Chen},
+  \bibinfo{title}{{SynQP}: A framework and metrics for evaluating the quality
+  and privacy risk of synthetic data}, \bibinfo{year}{2026}.
+  \href{http://arxiv.org/abs/2601.12124}{{\tt arXiv:2601.12124}}.
+%Type = Misc
+\bibitem[{Pathak and Jana(2026)}]{pathak2026kde}
+\bibinfo{author}{R.~Pathak}, \bibinfo{author}{S.~Jana},
+  \bibinfo{title}{Quantifying membership disclosure risk for tabular synthetic
+  data using kernel density estimators}, \bibinfo{year}{2026}.
+  \href{http://arxiv.org/abs/2603.10937}{{\tt arXiv:2603.10937}}.
+%Type = Inproceedings
+\bibitem[{Ganev and De~Cristofaro(2025)}]{ganev2025inadequacy}
+\bibinfo{author}{G.~Ganev}, \bibinfo{author}{E.~De~Cristofaro},
+\newblock \bibinfo{title}{The inadequacy of similarity-based privacy metrics:
+  Privacy attacks against ``truly anonymous'' synthetic datasets},
+\newblock in: \bibinfo{booktitle}{Proceedings of the 46th IEEE Symposium on
+  Security and Privacy (S\&P)}, \bibinfo{year}{2025}.
+%Type = Misc
+\bibitem[{Yao et~al.(2025)Yao, Kr{\v{c}}o, Ganev, and de~Montjoye}]{yao2025dcr}
+\bibinfo{author}{Z.~Yao}, \bibinfo{author}{N.~Kr{\v{c}}o},
+  \bibinfo{author}{G.~Ganev}, \bibinfo{author}{Y.-A. de~Montjoye},
+  \bibinfo{title}{The {DCR} delusion: Measuring the privacy risk of synthetic
+  data}, \bibinfo{year}{2025}. \href{http://arxiv.org/abs/2505.01524}{{\tt
+  arXiv:2505.01524}}.
+%Type = Article
+\bibitem[{Pilgram et~al.(2025)Pilgram, El~Emam et~al.}]{pilgram2025consensus}
+\bibinfo{author}{L.~Pilgram}, \bibinfo{author}{K.~El~Emam}, et~al.,
+\newblock \bibinfo{title}{A consensus privacy metrics framework for synthetic
+  data},
+\newblock \bibinfo{journal}{Patterns} \bibinfo{volume}{6}
+  (\bibinfo{year}{2025}) \bibinfo{pages}{101320}.
+  \DOIprefix\doi{10.1016/j.patter.2025.101320}.
+%Type = Misc
+\bibitem[{Plasencia~Palacios et~al.(2025)Plasencia~Palacios, Boudewijn,
+  Saccani, Ferraris, Sofronieva, D'Acquisto, Brozzetti, Panfilo, and
+  Bortolussi}]{plasencia2025empirical}
+\bibinfo{author}{M.~N. Plasencia~Palacios}, \bibinfo{author}{A.~Boudewijn},
+  \bibinfo{author}{S.~Saccani}, \bibinfo{author}{A.~F. Ferraris},
+  \bibinfo{author}{D.~Sofronieva}, \bibinfo{author}{G.~D'Acquisto},
+  \bibinfo{author}{F.~Brozzetti}, \bibinfo{author}{D.~Panfilo},
+  \bibinfo{author}{L.~Bortolussi}, \bibinfo{title}{Empirical evaluation of
+  structured synthetic data privacy metrics: Novel experimental framework},
+  \bibinfo{year}{2025}. \href{http://arxiv.org/abs/2512.16284}{{\tt
+  arXiv:2512.16284}}.
+%Type = Misc
+\bibitem[{Kuo et~al.(2026)Kuo, Gallego, and Jorm}]{kuo2026synthetic}
+\bibinfo{author}{N.~I.-H. Kuo}, \bibinfo{author}{B.~Gallego},
+  \bibinfo{author}{L.~Jorm}, \bibinfo{title}{Synthetic but not realistic: The
+  evaluation challenge in generative modelling for structured electronic
+  medical records}, \bibinfo{year}{2026}.
+  \href{http://arxiv.org/abs/2606.08903}{{\tt arXiv:2606.08903}}.
+%Type = Article
+\bibitem[{Giomi et~al.(2023)Giomi, Boenisch, Wehmeyer, and
+  Tasn{\'a}di}]{giomi2023anonymeter}
+\bibinfo{author}{M.~Giomi}, \bibinfo{author}{F.~Boenisch},
+  \bibinfo{author}{C.~Wehmeyer}, \bibinfo{author}{B.~Tasn{\'a}di},
+\newblock \bibinfo{title}{A unified framework for quantifying privacy risk in
+  synthetic data},
+\newblock \bibinfo{journal}{Proceedings on Privacy Enhancing Technologies}
+  \bibinfo{volume}{2023} (\bibinfo{year}{2023}) \bibinfo{pages}{312--328}.
+%Type = Article
+\bibitem[{Eliazar et~al.(2026)Eliazar, Brown, Cinamon, Kantarcioglu, and
+  Malin}]{eliazar2026pprl}
+\bibinfo{author}{A.~Eliazar}, \bibinfo{author}{J.~T. Brown},
+  \bibinfo{author}{S.~Cinamon}, \bibinfo{author}{M.~Kantarcioglu},
+  \bibinfo{author}{B.~Malin},
+\newblock \bibinfo{title}{Re-identification risk for common privacy preserving
+  patient matching strategies when shared with de-identified demographics},
+\newblock \bibinfo{journal}{Journal of the American Medical Informatics
+  Association} \bibinfo{volume}{33} (\bibinfo{year}{2026})
+  \bibinfo{pages}{336}. \DOIprefix\doi{10.1093/jamia/ocaf183}.
+%Type = Article
+\bibitem[{Nanevski et~al.(2026)Nanevski, J{\"a}ger, Mohebi, Schulte-Althoff,
+  Pohle, Chandler, Gubser, Nowak, Prasser, F{\"u}rstenau, Balzer, and
+  Biessmann}]{nanevski2026fall}
+\bibinfo{author}{I.~Nanevski}, \bibinfo{author}{S.~J{\"a}ger},
+  \bibinfo{author}{M.~Mohebi}, \bibinfo{author}{M.~Schulte-Althoff},
+  \bibinfo{author}{J.~Pohle}, \bibinfo{author}{N.~Chandler},
+  \bibinfo{author}{R.~Gubser}, \bibinfo{author}{A.~Nowak},
+  \bibinfo{author}{F.~Prasser}, \bibinfo{author}{D.~F{\"u}rstenau},
+  \bibinfo{author}{F.~Balzer}, \bibinfo{author}{F.~Biessmann},
+\newblock \bibinfo{title}{Anonymized but useful synthetic tabular health data
+  for {AI} based fall risk assessment},
+\newblock \bibinfo{journal}{Scientific Data} \bibinfo{volume}{13}
+  (\bibinfo{year}{2026}). \DOIprefix\doi{10.1038/s41597-026-07910-z}.
+%Type = Article
+\bibitem[{Guillaudeux et~al.(2023)Guillaudeux, Rousseau, Petot
+  et~al.}]{guillaudeux2023avatar}
+\bibinfo{author}{M.~Guillaudeux}, \bibinfo{author}{O.~Rousseau},
+  \bibinfo{author}{J.~Petot}, et~al.,
+\newblock \bibinfo{title}{Patient-centric synthetic data generation, no reason
+  to risk re-identification in biomedical data analysis},
+\newblock \bibinfo{journal}{npj Digital Medicine} \bibinfo{volume}{6}
+  (\bibinfo{year}{2023}) \bibinfo{pages}{37}.
+  \DOIprefix\doi{10.1038/s41746-023-00771-5}.
+%Type = Article
+\bibitem[{Chicco and Jurman(2020)}]{chicco2020mcc}
+\bibinfo{author}{D.~Chicco}, \bibinfo{author}{G.~Jurman},
+\newblock \bibinfo{title}{The advantages of the {Matthews} correlation
+  coefficient ({MCC}) over {F1} score and accuracy in binary classification
+  evaluation},
+\newblock \bibinfo{journal}{BMC Genomics} \bibinfo{volume}{21}
+  (\bibinfo{year}{2020}) \bibinfo{pages}{6}.
+%Type = Article
+\bibitem[{Chicco and Jurman(2023)}]{chicco2023mccroc}
+\bibinfo{author}{D.~Chicco}, \bibinfo{author}{G.~Jurman},
+\newblock \bibinfo{title}{The {Matthews} correlation coefficient ({MCC}) should
+  replace the {ROC AUC} as the standard metric for assessing binary
+  classification},
+\newblock \bibinfo{journal}{BioData Mining} \bibinfo{volume}{16}
+  (\bibinfo{year}{2023}) \bibinfo{pages}{4}.
+%Type = Article
+\bibitem[{Saito and Rehmsmeier(2015)}]{saito2015prc}
+\bibinfo{author}{T.~Saito}, \bibinfo{author}{M.~Rehmsmeier},
+\newblock \bibinfo{title}{The precision-recall plot is more informative than
+  the {ROC} plot when evaluating binary classifiers on imbalanced datasets},
+\newblock \bibinfo{journal}{PLoS ONE} \bibinfo{volume}{10}
+  (\bibinfo{year}{2015}) \bibinfo{pages}{e0118432}.
+%Type = Article
+\bibitem[{Imani et~al.(2026)Imani, Joudaki, Bagheri, and
+  Arabnia}]{imani2026rocauc}
+\bibinfo{author}{M.~Imani}, \bibinfo{author}{M.~Joudaki},
+  \bibinfo{author}{A.~Bagheri}, \bibinfo{author}{H.~R. Arabnia},
+\newblock \bibinfo{title}{Why {ROC-AUC} is misleading for highly imbalanced
+  data: In-depth evaluation of {MCC}, {F2}-score, {H}-measure, and {AUC}-based
+  metrics across diverse classifiers},
+\newblock \bibinfo{journal}{Technologies} \bibinfo{volume}{14}
+  (\bibinfo{year}{2026}) \bibinfo{pages}{54}.
+  \DOIprefix\doi{10.3390/technologies14010054}.
+%Type = Article
+\bibitem[{Richardson et~al.(2024)Richardson, Trevizani, Greenbaum, Carter,
+  Nielsen, and Peters}]{richardson2024roc}
+\bibinfo{author}{E.~Richardson}, \bibinfo{author}{R.~Trevizani},
+  \bibinfo{author}{J.~A. Greenbaum}, \bibinfo{author}{H.~Carter},
+  \bibinfo{author}{M.~Nielsen}, \bibinfo{author}{B.~Peters},
+\newblock \bibinfo{title}{The receiver operating characteristic curve
+  accurately assesses imbalanced datasets},
+\newblock \bibinfo{journal}{Patterns} \bibinfo{volume}{5}
+  (\bibinfo{year}{2024}) \bibinfo{pages}{100994}.
+%Type = Article
+\bibitem[{Sweeney(2002)}]{sweeney2002kanon}
+\bibinfo{author}{L.~Sweeney},
+\newblock \bibinfo{title}{k-anonymity: A model for protecting privacy},
+\newblock \bibinfo{journal}{International Journal of Uncertainty, Fuzziness and
+  Knowledge-Based Systems} \bibinfo{volume}{10} (\bibinfo{year}{2002})
+  \bibinfo{pages}{557--570}.
+%Type = Article
+\bibitem[{Rocher et~al.(2019)Rocher, Hendrickx, and
+  de~Montjoye}]{rocher2019estimating}
+\bibinfo{author}{L.~Rocher}, \bibinfo{author}{J.~M. Hendrickx},
+  \bibinfo{author}{Y.-A. de~Montjoye},
+\newblock \bibinfo{title}{Estimating the success of re-identifications in
+  incomplete datasets using generative models},
+\newblock \bibinfo{journal}{Nature Communications} \bibinfo{volume}{10}
+  (\bibinfo{year}{2019}) \bibinfo{pages}{3069}.
+%Type = Article
+\bibitem[{Machanavajjhala et~al.(2007)Machanavajjhala, Kifer, Gehrke, and
+  Venkitasubramaniam}]{machanavajjhala2007ldiv}
+\bibinfo{author}{A.~Machanavajjhala}, \bibinfo{author}{D.~Kifer},
+  \bibinfo{author}{J.~Gehrke}, \bibinfo{author}{M.~Venkitasubramaniam},
+\newblock \bibinfo{title}{l-diversity: Privacy beyond k-anonymity},
+\newblock \bibinfo{journal}{ACM Transactions on Knowledge Discovery from Data}
+  \bibinfo{volume}{1} (\bibinfo{year}{2007}) \bibinfo{pages}{3}.
+%Type = Inproceedings
+\bibitem[{Li et~al.(2007)Li, Li, and Venkatasubramanian}]{li2007tcloseness}
+\bibinfo{author}{N.~Li}, \bibinfo{author}{T.~Li},
+  \bibinfo{author}{S.~Venkatasubramanian},
+\newblock \bibinfo{title}{t-closeness: Privacy beyond k-anonymity and
+  l-diversity},
+\newblock in: \bibinfo{booktitle}{Proceedings of the 23rd IEEE International
+  Conference on Data Engineering (ICDE)}, \bibinfo{year}{2007}, pp.
+  \bibinfo{pages}{106--115}.
+%Type = Article
+\bibitem[{Skinner and Elliot(2002)}]{skinner2002measure}
+\bibinfo{author}{C.~J. Skinner}, \bibinfo{author}{M.~J. Elliot},
+\newblock \bibinfo{title}{A measure of disclosure risk for microdata},
+\newblock \bibinfo{journal}{Journal of the Royal Statistical Society: Series B}
+  \bibinfo{volume}{64} (\bibinfo{year}{2002}) \bibinfo{pages}{855--867}.
+%Type = Inproceedings
+\bibitem[{Dwork(2006)}]{dwork2006dp}
+\bibinfo{author}{C.~Dwork},
+\newblock \bibinfo{title}{Differential privacy},
+\newblock in: \bibinfo{booktitle}{Automata, Languages and Programming (ICALP)},
+  volume \bibinfo{volume}{4052} of \textit{\bibinfo{series}{Lecture Notes in
+  Computer Science}}, \bibinfo{year}{2006}, pp. \bibinfo{pages}{1--12}.
+%Type = Article
+\bibitem[{Fellegi and Sunter(1969)}]{fellegi1969linkage}
+\bibinfo{author}{I.~P. Fellegi}, \bibinfo{author}{A.~B. Sunter},
+\newblock \bibinfo{title}{A theory for record linkage},
+\newblock \bibinfo{journal}{Journal of the American Statistical Association}
+  \bibinfo{volume}{64} (\bibinfo{year}{1969}) \bibinfo{pages}{1183--1210}.
+%Type = Article
+\bibitem[{El~Emam et~al.(2011)El~Emam, Jonker, Arbuckle, and
+  Malin}]{elemam2011review}
+\bibinfo{author}{K.~El~Emam}, \bibinfo{author}{E.~Jonker},
+  \bibinfo{author}{L.~Arbuckle}, \bibinfo{author}{B.~Malin},
+\newblock \bibinfo{title}{A systematic review of re-identification attacks on
+  health data},
+\newblock \bibinfo{journal}{PLoS ONE} \bibinfo{volume}{6}
+  (\bibinfo{year}{2011}) \bibinfo{pages}{e28071}.
+%Type = Inproceedings
+\bibitem[{Stadler et~al.(2022)Stadler, Oprisanu, and
+  Troncoso}]{stadler2022groundhog}
+\bibinfo{author}{T.~Stadler}, \bibinfo{author}{B.~Oprisanu},
+  \bibinfo{author}{C.~Troncoso},
+\newblock \bibinfo{title}{Synthetic data -- anonymisation groundhog day},
+\newblock in: \bibinfo{booktitle}{Proceedings of the 31st USENIX Security
+  Symposium}, \bibinfo{year}{2022}, pp. \bibinfo{pages}{1451--1468}.
+%Type = Article
+\bibitem[{El~Emam et~al.(2020)El~Emam, Mosquera, and
+  Bass}]{elemam2020synthetic}
+\bibinfo{author}{K.~El~Emam}, \bibinfo{author}{L.~Mosquera},
+  \bibinfo{author}{J.~Bass},
+\newblock \bibinfo{title}{Evaluating identity disclosure risk in fully
+  synthetic health data: Model development and validation},
+\newblock \bibinfo{journal}{Journal of Medical Internet Research}
+  \bibinfo{volume}{22} (\bibinfo{year}{2020}) \bibinfo{pages}{e23139}.
+  \DOIprefix\doi{10.2196/23139}.
+%Type = Inproceedings
+\bibitem[{Brodersen et~al.(2010)Brodersen, Ong, Stephan, and
+  Buhmann}]{brodersen2010balanced}
+\bibinfo{author}{K.~H. Brodersen}, \bibinfo{author}{C.~S. Ong},
+  \bibinfo{author}{K.~E. Stephan}, \bibinfo{author}{J.~M. Buhmann},
+\newblock \bibinfo{title}{The balanced accuracy and its posterior
+  distribution},
+\newblock in: \bibinfo{booktitle}{Proceedings of the 20th International
+  Conference on Pattern Recognition (ICPR)}, \bibinfo{year}{2010}, pp.
+  \bibinfo{pages}{3121--3124}.
+%Type = Article
+\bibitem[{Cohen(1960)}]{cohen1960kappa}
+\bibinfo{author}{J.~Cohen},
+\newblock \bibinfo{title}{A coefficient of agreement for nominal scales},
+\newblock \bibinfo{journal}{Educational and Psychological Measurement}
+  \bibinfo{volume}{20} (\bibinfo{year}{1960}) \bibinfo{pages}{37--46}.
+%Type = Article
+\bibitem[{Matthews(1975)}]{matthews1975}
+\bibinfo{author}{B.~W. Matthews},
+\newblock \bibinfo{title}{Comparison of the predicted and observed secondary
+  structure of {T4} phage lysozyme},
+\newblock \bibinfo{journal}{Biochimica et Biophysica Acta (BBA) -- Protein
+  Structure} \bibinfo{volume}{405} (\bibinfo{year}{1975})
+  \bibinfo{pages}{442--451}.
+
+\end{thebibliography}
