@@ -30,6 +30,9 @@ import {
 import { AmountInput, parseInputAmount } from '../components/AmountInput';
 import { CategoryPicker } from '../components/CategoryPicker';
 import { Field } from '../components/Field';
+import { strFromU8 } from 'fflate';
+import { base64ToBytes } from '../../services/archive/BackupArchive';
+import { pickBackupFile } from '../../services/files/FilesBridge';
 import { useFinanceStore } from '../store/useFinanceStore';
 import { useLearningStore } from '../store/useLearningStore';
 import { palette, providerColor, providerIcon } from '../theme/theme';
@@ -246,6 +249,14 @@ export const LearningScreen = ({ navigation }: { navigation?: { goBack: () => vo
 
   const leave = () => navigation?.goBack();
 
+  /** Fichier texte de l'application « SMS Exporter » (historique sans permission SMS, ou d'un ancien téléphone). */
+  const importExport = async () => {
+    const picked = await pickBackupFile().catch(() => null);
+    if (picked) {
+      await useLearningStore.getState().startFromExport(strFromU8(base64ToBytes(picked.base64)));
+    }
+  };
+
   const confirm = () =>
     proposal &&
     decide({
@@ -313,6 +324,16 @@ export const LearningScreen = ({ navigation }: { navigation?: { goBack: () => vo
               testID="learning-start"
               accessibilityLabel="Analyser mes SMS">
               Analyser mes SMS
+            </Button>
+            <Button
+              mode="text"
+              icon="file-import-outline"
+              textColor={theme.colors.onPrimary}
+              onPress={importExport}
+              style={styles.heroLink}
+              testID="learning-import-export"
+              accessibilityLabel="Importer un fichier SMS Exporter">
+              Importer un export SMS (.txt)
             </Button>
           </Surface>
         )}
@@ -564,6 +585,7 @@ const styles = StyleSheet.create({
   hero: { borderRadius: 24, padding: 20 },
   heroText: { opacity: 0.9, marginTop: 8 },
   heroButton: { marginTop: 16, alignSelf: 'flex-start' },
+  heroLink: { marginTop: 4, alignSelf: 'flex-start' },
   banner: { padding: 12, borderRadius: 12, marginBottom: 10 },
   card: { marginTop: 12 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

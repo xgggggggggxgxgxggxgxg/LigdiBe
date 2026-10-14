@@ -483,7 +483,7 @@ const RULES: ReadonlyArray<ParserRule> = [
   {
     id: 'WAVE_RECEIVED',
     provider: 'UBA_WAVE',
-    pattern: new RegExp(`Vous avez re[çc]u ${AMT}${CUR} De (.+?)\\s*\\((\\+?\\d+)\\)`, 'i'),
+    pattern: new RegExp(`Vous avez re[çc]u ${AMT}${CUR}\\s+De\\s+(.+?)\\s*\\((\\+?\\d+)\\)`, 'i'),
     build: (m, s) => ({
       type: 'INCOME',
       amount: parseAmountOrZero(m[1]),

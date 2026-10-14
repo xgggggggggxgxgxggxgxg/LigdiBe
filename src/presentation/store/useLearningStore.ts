@@ -22,6 +22,7 @@ import {
   type RawSms,
 } from '../../domain/usecases/LearningQueue';
 import { EXTRA_SENDERS_KEY, LEARNED_CATEGORIES_KEY } from '../../domain/usecases/ProcessIncomingSms';
+import { parseSmsExportText } from '../../data/parser/SmsExportFile';
 import { drainPendingSms, readSmsInbox } from '../../services/sms/SmsBridge';
 import { getConfiguredRepositories, useFinanceStore } from './useFinanceStore';
 
@@ -60,6 +61,8 @@ interface LearningState {
     sinceMs?: number;
     chunkSize?: number;
   }): Promise<QueueBuildResult['excluded'] | undefined>;
+  /** Démarre depuis un export texte « SMS Exporter » (contenu du fichier .txt). */
+  startFromExport(text: string): Promise<number>;
   decide(decision: Decision): Promise<void>;
   undo(): Promise<void>;
   /** Revient sur un SMS déjà traité (ex. « Revoir les ignorés »). */
@@ -185,6 +188,16 @@ export const useLearningStore = create<LearningState>((set, get) => ({
       set({ status: 'IDLE', error: e instanceof Error ? e.message : String(e) });
       return undefined;
     }
+  },
+
+  async startFromExport(text) {
+    const messages = parseSmsExportText(text);
+    if (messages.length === 0) {
+      set({ error: "Ce fichier n'est pas un export « SMS Exporter » lisible (aucun SMS reçu trouvé)." });
+      return 0;
+    }
+    await get().start({ messages });
+    return messages.length;
   },
 
   async decide(decision) {

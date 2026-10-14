@@ -75,9 +75,13 @@ Calibrage sur un export réel (Orange Money, Moov Money, Wave, Ecobank — Burki
 - [x] Étape 2 — Orange Money : reçu sans frais, « vous avez transfere … au numero », paiement sans frais, « recharge … d unites », dépôt agent (CI), transferts internationaux, envoi à un non-abonné.
 - [x] Étape 3 — Moov Money : « recu … de credit du … » (achat de crédit), « Depot d'argent reussi », « Transfert National reussi ».
 - [x] Étape 4 — Ecobank : « XOF … Crédit / Débit du ac », dépôts au Point Xpress (3 SMS pour une opération → 1 seule écriture).
-- [ ] Étape 5 — Import d'un fichier « SMS Exporter » (.txt) vers l'apprentissage guidé.
+- [x] Étape 5 — Import d'un fichier « SMS Exporter » (.txt) vers l'apprentissage guidé (écran Apprentissage › « Importer un export SMS »). Corrigé au passage : SMS Wave reçu dont « De NOM » est sur la ligne suivante.
 
 ### Reste à développer
+- Tester sur l'appareil réel avec l'historique complet (les règles sont calibrées sur un échantillon anonymisé de l'export).
+- Ecobank « Virtual Card Funding » : le débit principal et ses 2 frais (ex. 4 500 + 45 + 8) arrivent comme 3 débits séparés ; les frais ne sont pas encore regroupés en « Frais & Taxes ».
+- Ecobank : soldes des débits reçus dans le désordre (même minute) — le dernier SMS reçu fait foi.
+- Envoyés (« Envoyé à … ») de l'export SMS Exporter : ignorés volontairement.
 - Frais de retrait Orange : absents du SMS, déductibles de l'écart de solde (non calculés).
 - Frais de facture ONEA/SONABEL : présents seulement dans le SMS « détail de facture » (ignoré pour éviter le doublon).
 - Crédit Moov « recu … de credit du <numéro> » : impossible de distinguer un achat pour soi d'un cadeau reçu sans le solde ; proposé avec confiance moyenne dans l'apprentissage guidé.

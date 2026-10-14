@@ -499,3 +499,21 @@ describe('Étape 4 — Ecobank (formats réels)', () => {
     ).toHaveLength(1);
   });
 });
+
+describe('Wave (format réel multi-lignes)', () => {
+  test('« De NOM » sur la ligne suivant le montant', () => {
+    expect(
+      parseTransactionSms(
+        'Vous avez reçu 3.000F\nDe OKPEOLOU Eric (+2250700000001)\n24/06/2026 à 10:38\n\n+infos: 80001257\nAvec UBA\nxot-25m7hbegg2y40',
+        { sender: 'WAVE' },
+      ),
+    ).toMatchObject({
+      provider: 'UBA_WAVE',
+      type: 'INCOME',
+      amount: 3000,
+      counterpartyName: 'OKPEOLOU Eric',
+      counterpartyPhone: '+2250700000001',
+      occurredAt: '2026-06-24T10:38:00',
+    });
+  });
+});
